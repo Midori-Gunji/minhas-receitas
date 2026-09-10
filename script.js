@@ -1,11 +1,11 @@
 // Configuração do seu projeto Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyBsvV0LEq8r-6z-UM6wixaokHI_wokEvIA",
-  authDomain: "minhas-receitas-67d46.firebaseapp.com",
-  projectId: "minhas-receitas-67d46",
-  storageBucket: "minhas-receitas-67d46.firebasestorage.app",
-  messagingSenderId: "1097478676776",
-  appId: "1:1097478676776:web:03c38474eed27a46f6701d"
+  apiKey: "AIzaSyDDs6DLjiliZZWXNIfE559DCk43BxDIybA",
+  authDomain: "minhas-receitas-4e570.firebaseapp.com",
+  projectId: "minhas-receitas-4e570",
+  storageBucket: "minhas-receitas-4e570.firebasestorage.app",
+  messagingSenderId: "1012306362675",
+  appId: "1:1012306362675:web:53a5c4b02f465ab3d97e46"
 };
 
 firebase.initializeApp(firebaseConfig);
