@@ -1,11 +1,12 @@
 :root {
-  --paper: #f2ead9;
-  --ink: #2b241a;
-  --olive: #4a5a3a;
-  --olive-dark: #38452c;
-  --clay: #b5654a;
-  --card: #fffdf8;
-  --line: #dcd0b4;
+  --bg: #fff6f0;
+  --pink: #ffd6e0;
+  --pink-dark: #f4879c;
+  --yellow: #ffe8a3;
+  --mint: #cdeedd;
+  --ink: #5a4340;
+  --card: #ffffff;
+  --line: #f6d8cf;
 }
 
 * {
@@ -14,38 +15,56 @@
 
 body {
   margin: 0;
-  background: var(--paper);
+  background: var(--bg);
   color: var(--ink);
-  font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
-  line-height: 1.5;
+  font-family: 'Nunito', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.food-strip {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  padding: 20px 0 4px;
+}
+
+.doodle {
+  width: 44px;
+  height: 44px;
 }
 
 header {
-  padding: 48px 24px 24px;
+  padding: 8px 24px 32px;
   text-align: center;
-  border-bottom: 3px double var(--line);
 }
 
 header h1 {
   margin: 0;
-  font-size: 2.2rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-family: 'Baloo 2', 'Nunito', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--pink-dark);
+}
+
+.chef-hat {
+  width: 90px;
+  height: auto;
+  margin-top: 6px;
 }
 
 .subtitle {
-  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  color: var(--olive-dark);
-  margin-top: 8px;
-  font-size: 1rem;
+  margin-top: 10px;
+  font-size: 1.2rem;
+  color: var(--ink);
 }
 
 main {
-  max-width: 920px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 32px 20px 64px;
+  padding: 16px 20px 64px;
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 340px 1fr;
   gap: 32px;
 }
 
@@ -56,120 +75,140 @@ main {
 }
 
 h2 {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-family: 'Baloo 2', 'Nunito', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
   margin-bottom: 16px;
-  color: var(--olive-dark);
+  color: var(--pink-dark);
+}
+
+.form-section {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 8px 0 var(--pink);
+  height: fit-content;
 }
 
 .form-section form {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 label {
-  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.85rem;
-  color: var(--olive-dark);
-  margin-top: 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--pink-dark);
+  margin-top: 16px;
 }
 
 input, textarea {
-  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.95rem;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--card);
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.1rem;
+  padding: 14px 16px;
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  background: #fffdfb;
   color: var(--ink);
   resize: vertical;
 }
 
 textarea {
-  min-height: 90px;
+  min-height: 100px;
 }
 
 input:focus, textarea:focus {
-  outline: 2px solid var(--olive);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--pink-dark);
 }
 
 button {
-  margin-top: 20px;
-  padding: 12px 18px;
+  margin-top: 24px;
+  padding: 16px 20px;
   border: none;
-  border-radius: 4px;
-  background: var(--olive);
+  border-radius: 20px;
+  background: var(--pink-dark);
   color: #fff;
-  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease;
+  box-shadow: 0 5px 0 #d9647a;
+  transition: transform 0.1s ease;
 }
 
 button:hover {
-  background: var(--olive-dark);
+  transform: translateY(2px);
+  box-shadow: 0 3px 0 #d9647a;
 }
 
 .recipe-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .recipe-card {
   background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 18px 20px;
+  border-radius: 24px;
+  padding: 22px 26px;
   position: relative;
+  box-shadow: 0 8px 0 var(--mint);
 }
 
 .recipe-card h3 {
-  margin: 0 0 10px;
-  font-size: 1.25rem;
+  margin: 0 0 12px;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 1.7rem;
+  color: var(--pink-dark);
 }
 
 .recipe-card .field-label {
-  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.75rem;
-  color: var(--olive-dark);
-  margin: 12px 0 4px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--pink-dark);
+  margin: 14px 0 6px;
 }
 
 .recipe-card p, .recipe-card ul {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   white-space: pre-wrap;
 }
 
 .recipe-card ul {
-  padding-left: 20px;
+  padding-left: 22px;
+}
+
+.recipe-card ul li {
+  margin-bottom: 4px;
 }
 
 .delete-btn {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  background: none;
+  top: 18px;
+  right: 18px;
+  background: var(--yellow);
   border: none;
-  color: var(--clay);
-  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.8rem;
+  border-radius: 14px;
+  color: #8a6a1f;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
   cursor: pointer;
-  margin: 0;
-  padding: 4px 6px;
+  padding: 6px 14px;
 }
 
 .delete-btn:hover {
-  text-decoration: underline;
-  background: none;
+  background: #ffdd7a;
 }
 
 .empty-message {
-  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  color: var(--olive-dark);
-  font-size: 0.9rem;
+  font-size: 1.1rem;
+  color: var(--ink);
+  background: var(--card);
+  border-radius: 20px;
+  padding: 20px;
+  text-align: center;
 }
