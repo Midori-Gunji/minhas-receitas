@@ -1,26 +1,33 @@
-// Todas as receitas ficam guardadas no navegador, na chave "minhas-receitas"
-const STORAGE_KEY = 'minhas-receitas';
+// Configuração do seu projeto Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyBsvV0LEq8r-6z-UM6wixaokHI_wokEvIA",
+  authDomain: "minhas-receitas-67d46.firebaseapp.com",
+  projectId: "minhas-receitas-67d46",
+  storageBucket: "minhas-receitas-67d46.firebasestorage.app",
+  messagingSenderId: "1097478676776",
+  appId: "1:1097478676776:web:03c38474eed27a46f6701d"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const receitasRef = db.collection('receitas');
 
 const form = document.getElementById('recipe-form');
 const list = document.getElementById('recipe-list');
 const emptyMessage = document.getElementById('empty-message');
 
-function getRecipes() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  return raw ? JSON.parse(raw) : [];
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
-function saveRecipes(recipes) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-}
-
-function renderRecipes() {
-  const recipes = getRecipes();
+function renderRecipes(docs) {
   list.innerHTML = '';
+  emptyMessage.style.display = docs.length === 0 ? 'block' : 'none';
 
-  emptyMessage.style.display = recipes.length === 0 ? 'block' : 'none';
-
-  recipes.forEach((recipe, index) => {
+  docs.forEach((doc) => {
+    const recipe = doc.data();
     const card = document.createElement('div');
     card.className = 'recipe-card';
 
@@ -31,7 +38,7 @@ function renderRecipes() {
       .join('');
 
     card.innerHTML = `
-      <button class="delete-btn" data-index="${index}">Remover</button>
+      <button class="delete-btn" data-id="${doc.id}">Remover</button>
       <h3>${escapeHtml(recipe.nome)}</h3>
       <p class="field-label">Ingredientes</p>
       <ul>${ingredientesHtml}</ul>
@@ -43,11 +50,10 @@ function renderRecipes() {
   });
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+// Escuta o banco de dados em tempo real: qualquer mudança atualiza a tela sozinha
+receitasRef.orderBy('criadoEm', 'desc').onSnapshot((snapshot) => {
+  renderRecipes(snapshot.docs);
+});
 
 form.addEventListener('submit', function (event) {
   event.preventDefault();
@@ -58,22 +64,18 @@ form.addEventListener('submit', function (event) {
 
   if (!nome || !ingredientes || !modo) return;
 
-  const recipes = getRecipes();
-  recipes.unshift({ nome, ingredientes, modo });
-  saveRecipes(recipes);
+  receitasRef.add({
+    nome,
+    ingredientes,
+    modo,
+    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+  });
 
   form.reset();
-  renderRecipes();
 });
 
 list.addEventListener('click', function (event) {
   if (!event.target.classList.contains('delete-btn')) return;
-
-  const index = Number(event.target.dataset.index);
-  const recipes = getRecipes();
-  recipes.splice(index, 1);
-  saveRecipes(recipes);
-  renderRecipes();
+  const id = event.target.dataset.id;
+  receitasRef.doc(id).delete();
 });
-
-renderRecipes();
