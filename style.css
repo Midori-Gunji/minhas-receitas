@@ -102,7 +102,7 @@ label {
   margin-top: 16px;
 }
 
-input, textarea {
+input, textarea, select {
   font-family: 'Nunito', sans-serif;
   font-size: 1.05rem;
   padding: 12px 14px;
@@ -113,11 +113,16 @@ input, textarea {
   resize: vertical;
 }
 
+::placeholder {
+  color: #a89a86;
+  opacity: 1;
+}
+
 textarea {
   min-height: 100px;
 }
 
-input:focus, textarea:focus {
+input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--rust);
 }
@@ -139,10 +144,67 @@ button:hover {
   background: #a8663b;
 }
 
+.cancel-btn {
+  margin-top: 10px;
+  padding: 10px 20px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  border-color: var(--rust);
+}
+
 .recipe-list {
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-btn:hover {
+  border-color: var(--rust);
+}
+
+.filter-btn.active {
+  background: var(--rust);
+  border-color: var(--rust);
+  color: #fff;
+}
+
+.category-tag {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--sage);
+  background: #eef1e6;
+  padding: 3px 12px;
+  border-radius: 999px;
+  margin-bottom: 8px;
 }
 
 .recipe-card {
@@ -182,14 +244,17 @@ button:hover {
   margin-bottom: 4px;
 }
 
-.delete-btn {
+.card-actions {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: var(--mustard);
+  display: flex;
+  gap: 8px;
+}
+
+.delete-btn, .edit-btn {
   border: none;
   border-radius: 6px;
-  color: #4a3a1a;
   font-family: 'Nunito', sans-serif;
   font-weight: 700;
   font-size: 0.9rem;
@@ -197,8 +262,22 @@ button:hover {
   padding: 5px 12px;
 }
 
+.delete-btn {
+  background: var(--mustard);
+  color: #4a3a1a;
+}
+
 .delete-btn:hover {
   background: #c99630;
+}
+
+.edit-btn {
+  background: var(--sage);
+  color: #fff;
+}
+
+.edit-btn:hover {
+  background: #74845c;
 }
 
 .empty-message {
