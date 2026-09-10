@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Caderno de Receitas</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1>Meu Caderno de Receitas</h1>
+    <p class="subtitle">Suas receitas, guardadas num só lugar.</p>
+  </header>
+
+  <main>
+    <section class="form-section">
+      <h2>Nova receita</h2>
+      <form id="recipe-form">
+        <label for="nome">Nome da receita</label>
+        <input type="text" id="nome" required placeholder="Ex: Bolo de fubá">
+
+        <label for="ingredientes">Ingredientes (um por linha)</label>
+        <textarea id="ingredientes" required placeholder="2 ovos&#10;1 xícara de açúcar&#10;1 xícara de fubá"></textarea>
+
+        <label for="modo">Modo de preparo</label>
+        <textarea id="modo" required placeholder="Descreva o passo a passo..."></textarea>
+
+        <button type="submit">Salvar receita</button>
+      </form>
+    </section>
+
+    <section class="list-section">
+      <h2>Receitas guardadas</h2>
+      <div id="recipe-list" class="recipe-list">
+        <!-- as receitas aparecem aqui automaticamente -->
+      </div>
+      <p id="empty-message" class="empty-message">Você ainda não tem receitas guardadas. Adicione a primeira ao lado!</p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
