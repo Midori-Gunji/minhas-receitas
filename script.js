@@ -191,7 +191,7 @@ function renderRecipes() {
       <span class="visibility-tag ${recipe.visibilidade}">${recipe.visibilidade === 'publica' ? 'Pública' : 'Privada'}</span>
       <h3>${escapeHtml(recipe.nome)}</h3>
       <p class="author-tag">Por ${escapeHtml(recipe.autorNome || 'Anônimo')}</p>
-      <p class="stars-display">${estrelasParaTexto(recipe.dificuldade || 0)}</p>
+      <p class="stars-display">Dificuldade: <span class="stars-only">${estrelasParaTexto(recipe.dificuldade || 0)}</span></p>
       <p class="field-label">Ingredientes</p>
       <ul>${ingredientesHtml}</ul>
       <p class="field-label">Modo de preparo</p>
