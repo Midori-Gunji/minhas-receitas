@@ -17,7 +17,6 @@ const receitasRef = db.collection('receitas');
 const loginScreen = document.getElementById('login-screen');
 const appContent = document.getElementById('app-content');
 const authTitulo = document.getElementById('auth-titulo');
-const welcomeMsg = document.querySelector('.welcome-msg');
 const signupNome = document.getElementById('signup-nome');
 const authEmail = document.getElementById('auth-email');
 const authSenha = document.getElementById('auth-senha');
@@ -37,14 +36,12 @@ authToggleLink.addEventListener('click', function (e) {
 
   if (modoCadastro) {
     authTitulo.textContent = 'Criar conta';
-    welcomeMsg.textContent = 'Vamos começar sua coleção de receitas! 🧁';
     signupNome.style.display = 'block';
     authBtn.textContent = 'Criar conta';
     authToggleTexto.textContent = 'Já tem conta?';
     authToggleLink.textContent = 'Entrar';
   } else {
     authTitulo.textContent = 'Entrar';
-    welcomeMsg.textContent = 'Bem-vinda(o) de volta à cozinha! 🐱🍳';
     signupNome.style.display = 'none';
     authBtn.textContent = 'Entrar';
     authToggleTexto.textContent = 'Ainda não tem conta?';

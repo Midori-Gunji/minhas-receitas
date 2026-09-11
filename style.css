@@ -37,21 +37,14 @@ body {
 }
 
 .doodle {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 96px;
 }
 
 header {
   position: relative;
   padding: 10px 24px 20px;
   text-align: center;
-}
-
-.logo-gatinhos {
-  width: 180px;
-  height: auto;
-  margin: 4px auto 0;
-  display: block;
 }
 
 header h1 {
@@ -369,12 +362,6 @@ button:hover {
   text-align: center;
 }
 
-.logo-login {
-  width: 140px;
-  margin: 0 auto 10px;
-  display: block;
-}
-
 .login-screen {
   min-height: 100vh;
   display: flex;
@@ -394,13 +381,6 @@ button:hover {
 
 .login-box h2 {
   margin-top: 0;
-}
-
-.welcome-msg {
-  font-size: 0.95rem;
-  color: var(--pink-dark);
-  margin-top: -6px;
-  margin-bottom: 4px;
 }
 
 .login-box input {
