@@ -39,7 +39,145 @@ body {
   height: 68px;
 }
 
+.star-picker {
+  font-size: 1.8rem;
+  color: var(--line);
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.star {
+  transition: color 0.1s ease;
+}
+
+.star.selected {
+  color: var(--mustard);
+}
+
+.visibility-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.radio-label {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.auth-toggle {
+  font-size: 0.9rem;
+  margin-top: 16px;
+}
+
+.auth-toggle a {
+  color: var(--rust);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.author-tag {
+  font-size: 0.85rem;
+  color: var(--ink);
+  opacity: 0.7;
+}
+
+.visibility-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-left: 6px;
+}
+
+.visibility-tag.publica {
+  background: #dceada;
+  color: #3a6b3a;
+}
+
+.visibility-tag.privada {
+  background: #eee0d4;
+  color: #8a5a2b;
+}
+
+.stars-display {
+  color: var(--mustard);
+  font-size: 1.1rem;
+  margin: 6px 0;
+}
+
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-box {
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 32px;
+  width: 90%;
+  max-width: 320px;
+  text-align: center;
+}
+
+.login-box h2 {
+  margin-top: 0;
+}
+
+.login-box input {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.login-box button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--rust);
+  color: #fff;
+  font-family: 'Caveat', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.login-erro {
+  color: #b23a3a;
+  font-size: 0.9rem;
+  margin-top: 12px;
+  min-height: 1.2em;
+}
+
+.logout-btn {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  padding: 8px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 header {
+  position: relative;
   padding: 10px 24px 30px;
   text-align: center;
 }

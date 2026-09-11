@@ -10,6 +10,25 @@
 </head>
 <body>
 
+  <div id="login-screen" class="login-screen">
+    <div class="login-box">
+      <h2 id="auth-titulo">Entrar</h2>
+
+      <input type="text" id="signup-nome" placeholder="Seu nome" style="display:none;">
+      <input type="email" id="auth-email" placeholder="Seu e-mail">
+      <input type="password" id="auth-senha" placeholder="Sua senha">
+
+      <button id="auth-btn">Entrar</button>
+      <p id="auth-erro" class="login-erro"></p>
+      <p class="auth-toggle">
+        <span id="auth-toggle-texto">Ainda não tem conta?</span>
+        <a href="#" id="auth-toggle-link">Criar conta</a>
+      </p>
+    </div>
+  </div>
+
+  <div id="app-content" style="display:none;">
+
   <div class="food-strip">
     <!-- Bule -->
     <svg viewBox="0 0 90 90" class="doodle">
@@ -49,8 +68,9 @@
   </div>
 
   <header>
+    <button id="logout-btn" class="logout-btn">Sair</button>
     <h1>Meu Caderno de Receitas</h1>
-    <p class="subtitle">Suas receitinhas queridas, todas guardadinhas aqui.</p>
+    <p class="subtitle" id="saudacao">Suas receitinhas queridas, todas guardadinhas aqui.</p>
   </header>
 
   <main>
@@ -69,6 +89,21 @@
           <option value="Sobremesa">Sobremesa</option>
         </select>
 
+        <label>Dificuldade</label>
+        <div class="star-picker" id="star-picker" data-valor="0">
+          <span class="star" data-valor="1">★</span>
+          <span class="star" data-valor="2">★</span>
+          <span class="star" data-valor="3">★</span>
+          <span class="star" data-valor="4">★</span>
+          <span class="star" data-valor="5">★</span>
+        </div>
+
+        <label>Visibilidade</label>
+        <div class="visibility-picker">
+          <label class="radio-label"><input type="radio" name="visibilidade" value="privada" checked> Privada (só eu vejo)</label>
+          <label class="radio-label"><input type="radio" name="visibilidade" value="publica"> Pública (todos veem)</label>
+        </div>
+
         <label for="ingredientes">Ingredientes (um por linha)</label>
         <textarea id="ingredientes" required placeholder="2 ovos&#10;1 xícara de açúcar&#10;1 xícara de fubá"></textarea>
 
@@ -81,7 +116,7 @@
     </section>
 
     <section class="list-section">
-      <h2>Receitas guardadas</h2>
+      <h2>Receitas</h2>
       <div class="filter-bar" id="filter-bar">
         <button class="filter-btn active" data-filter="Todas">Todas</button>
         <button class="filter-btn" data-filter="Café da manhã">Café da manhã</button>
@@ -92,12 +127,15 @@
       <div id="recipe-list" class="recipe-list">
         <!-- as receitas aparecem aqui automaticamente -->
       </div>
-      <p id="empty-message" class="empty-message">Você ainda não tem receitas guardadas. Adicione a primeira ao lado!</p>
+      <p id="empty-message" class="empty-message">Nenhuma receita por aqui ainda. Adicione a primeira ao lado!</p>
     </section>
   </main>
 
+  </div>
+
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
