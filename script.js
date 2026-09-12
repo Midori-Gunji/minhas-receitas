@@ -326,7 +326,11 @@ function renderComentariosNaTela(id) {
   if (!listaEl) return;
   const comentarios = comentariosCache.get(id) || [];
   listaEl.innerHTML = comentarios.map((c) => {
-    return `<p class="comment-item"><strong>${escapeHtml(c.autorNome)}:</strong> ${escapeHtml(c.texto)}</p>`;
+    const souAutorComentario = usuarioAtual && c.autorId === usuarioAtual.uid;
+    const botaoApagar = souAutorComentario
+      ? `<button class="delete-comment-btn" data-comment-id="${c.id}">Apagar</button>`
+      : '';
+    return `<p class="comment-item"><strong>${escapeHtml(c.autorNome)}:</strong> ${escapeHtml(c.texto)} ${botaoApagar}</p>`;
   }).join('') || '<p class="comment-empty">Nenhum comentário ainda.</p>';
 }
 
@@ -347,7 +351,7 @@ list.addEventListener('click', function (event) {
     if (!comentariosOuvindo.has(id)) {
       comentariosOuvindo.add(id);
       comentariosRef.where('receitaId', '==', id).orderBy('criadoEm', 'asc').onSnapshot((snapshot) => {
-        comentariosCache.set(id, snapshot.docs.map(d => d.data()));
+        comentariosCache.set(id, snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
         renderComentariosNaTela(id);
       });
     }
@@ -368,6 +372,11 @@ list.addEventListener('click', function (event) {
     });
 
     input.value = '';
+  }
+
+  if (event.target.classList.contains('delete-comment-btn')) {
+    const commentId = event.target.dataset.commentId;
+    comentariosRef.doc(commentId).delete();
   }
 });
 
