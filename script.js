@@ -100,6 +100,7 @@ const form = document.getElementById('recipe-form');
 const list = document.getElementById('recipe-list');
 const emptyMessage = document.getElementById('empty-message');
 const filterBar = document.getElementById('filter-bar');
+const searchInput = document.getElementById('search-input');
 const submitBtn = document.getElementById('submit-btn');
 const cancelBtn = document.getElementById('cancel-btn');
 const starPicker = document.getElementById('star-picker');
@@ -113,6 +114,7 @@ let todasReceitas = [];
 let minhasReceitasDocs = [];
 let publicasDocs = [];
 let filtroAtual = 'Todas';
+let termoBusca = '';
 let editandoId = null;
 let dificuldadeSelecionada = 0;
 
@@ -161,9 +163,17 @@ function mesclarEExibir() {
 }
 
 function renderRecipes() {
-  const docsFiltrados = filtroAtual === 'Todas'
+  let docsFiltrados = filtroAtual === 'Todas'
     ? todasReceitas
     : todasReceitas.filter(doc => doc.data().categoria === filtroAtual);
+
+  if (termoBusca) {
+    docsFiltrados = docsFiltrados.filter((doc) => {
+      const recipe = doc.data();
+      const texto = (recipe.nome + ' ' + recipe.ingredientes).toLowerCase();
+      return texto.includes(termoBusca);
+    });
+  }
 
   list.innerHTML = '';
   emptyMessage.style.display = docsFiltrados.length === 0 ? 'block' : 'none';
@@ -273,6 +283,11 @@ list.addEventListener('click', function (event) {
     const doc = todasReceitas.find(d => d.id === id);
     if (doc) entrarModoEdicao(id, doc.data());
   }
+});
+
+searchInput.addEventListener('input', function () {
+  termoBusca = searchInput.value.trim().toLowerCase();
+  renderRecipes();
 });
 
 filterBar.addEventListener('click', function (event) {

@@ -12,6 +12,25 @@
 
   <div id="login-screen" class="login-screen">
     <div class="login-box">
+      <svg viewBox="0 0 100 110" class="login-doodle">
+        <ellipse cx="50" cy="100" rx="26" ry="5" fill="#e8748f" opacity="0.15"/>
+        <path d="M28 52 L72 52 L64 90 Q50 97 36 90 Z" fill="#f2a4b6" stroke="#4a3a2a" stroke-width="2.5"/>
+        <path d="M28 52 L72 52 L69 60 L31 60 Z" fill="#fdd7e0"/>
+        <path d="M32 60 h36" stroke="#e8748f" stroke-width="1.5" opacity="0.4"/>
+        <path d="M35 70 h30 M33 79 h34" stroke="#e8748f" stroke-width="1.5" opacity="0.3"/>
+        <path d="M30 54 C24 30 40 18 50 24 C60 18 76 30 70 54 C60 46 40 46 30 54 Z" fill="#fff9f5" stroke="#4a3a2a" stroke-width="2.5"/>
+        <path d="M34 40 C34 30 42 26 50 28" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+        <circle cx="50" cy="18" r="6" fill="#e8748f" stroke="#4a3a2a" stroke-width="2"/>
+        <circle cx="48" cy="16" r="1.6" fill="#fff" opacity="0.7"/>
+        <circle cx="42" cy="68" r="2.3" fill="#4a3a2a"/>
+        <circle cx="58" cy="68" r="2.3" fill="#4a3a2a"/>
+        <path d="M45 74 Q50 78 55 74" fill="none" stroke="#4a3a2a" stroke-width="1.8" stroke-linecap="round"/>
+        <ellipse cx="35" cy="72" rx="4" ry="2.6" fill="#e8748f" opacity="0.5"/>
+        <ellipse cx="65" cy="72" rx="4" ry="2.6" fill="#e8748f" opacity="0.5"/>
+      </svg>
+
+      <p class="login-logo">Minhas Receitas</p>
+
       <h2 id="auth-titulo">Entrar</h2>
 
       <input type="text" id="signup-nome" placeholder="Seu nome" style="display:none;">
@@ -136,6 +155,7 @@
 
     <section class="list-section">
       <h2>Receitas</h2>
+      <input type="text" id="search-input" class="search-input" placeholder="Buscar por nome ou ingrediente...">
       <div class="filter-bar" id="filter-bar">
         <button class="filter-btn active" data-filter="Todas">Todas</button>
         <button class="filter-btn" data-filter="Café da manhã">Café da manhã</button>

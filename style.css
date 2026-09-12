@@ -362,6 +362,25 @@ button:hover {
   text-align: center;
 }
 
+.login-doodle {
+  width: 80px;
+  margin: 0 auto;
+  display: block;
+}
+
+.login-logo {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--pink-dark);
+  margin: 4px 0 18px;
+}
+
+.search-input {
+  width: 100%;
+  margin-bottom: 14px;
+}
+
 .login-screen {
   min-height: 100vh;
   display: flex;
