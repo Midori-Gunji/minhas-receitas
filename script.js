@@ -118,6 +118,7 @@ let filtroAtual = 'Todas';
 let termoBusca = '';
 let editandoId = null;
 let dificuldadeSelecionada = 0;
+const comentariosAbertos = new Set();
 
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -209,7 +210,7 @@ function renderRecipes() {
       <p>${escapeHtml(recipe.modo)}</p>
       <div class="comments-section">
         <button class="toggle-comments-btn" data-id="${doc.id}">💬 Comentários</button>
-        <div class="comments-box" data-comments-for="${doc.id}" style="display:none;">
+        <div class="comments-box" data-comments-for="${doc.id}" style="display:${comentariosAbertos.has(doc.id) ? 'block' : 'none'};">
           <div class="comments-list" data-list-for="${doc.id}"></div>
           <div class="comment-input-row">
             <input type="text" class="comment-input" data-comment-input-for="${doc.id}" placeholder="Deixe um comentário...">
@@ -220,6 +221,10 @@ function renderRecipes() {
     `;
 
     list.appendChild(card);
+  });
+
+  comentariosAbertos.forEach((id) => {
+    if (typeof renderComentariosNaTela === 'function') renderComentariosNaTela(id);
   });
 }
 
@@ -314,6 +319,16 @@ filterBar.addEventListener('click', function (event) {
 
 // ---------- Comentários ----------
 const comentariosOuvindo = new Set();
+const comentariosCache = new Map();
+
+function renderComentariosNaTela(id) {
+  const listaEl = document.querySelector(`.comments-list[data-list-for="${id}"]`);
+  if (!listaEl) return;
+  const comentarios = comentariosCache.get(id) || [];
+  listaEl.innerHTML = comentarios.map((c) => {
+    return `<p class="comment-item"><strong>${escapeHtml(c.autorNome)}:</strong> ${escapeHtml(c.texto)}</p>`;
+  }).join('') || '<p class="comment-empty">Nenhum comentário ainda.</p>';
+}
 
 list.addEventListener('click', function (event) {
   if (event.target.classList.contains('toggle-comments-btn')) {
@@ -322,15 +337,18 @@ list.addEventListener('click', function (event) {
     const abrindo = box.style.display === 'none';
     box.style.display = abrindo ? 'block' : 'none';
 
-    if (abrindo && !comentariosOuvindo.has(id)) {
+    if (abrindo) {
+      comentariosAbertos.add(id);
+      renderComentariosNaTela(id);
+    } else {
+      comentariosAbertos.delete(id);
+    }
+
+    if (!comentariosOuvindo.has(id)) {
       comentariosOuvindo.add(id);
       comentariosRef.where('receitaId', '==', id).orderBy('criadoEm', 'asc').onSnapshot((snapshot) => {
-        const listaEl = document.querySelector(`.comments-list[data-list-for="${id}"]`);
-        if (!listaEl) return;
-        listaEl.innerHTML = snapshot.docs.map((doc) => {
-          const c = doc.data();
-          return `<p class="comment-item"><strong>${escapeHtml(c.autorNome)}:</strong> ${escapeHtml(c.texto)}</p>`;
-        }).join('') || '<p class="comment-empty">Nenhum comentário ainda.</p>';
+        comentariosCache.set(id, snapshot.docs.map(d => d.data()));
+        renderComentariosNaTela(id);
       });
     }
   }
@@ -384,7 +402,37 @@ function adicionarMensagemChat(texto, autor) {
   chatMensagens.scrollTop = chatMensagens.scrollHeight;
 }
 
+let ultimasCandidatas = [];
+let ultimoIndiceCandidata = 0;
+
+function formatarReceitaChat(recipe) {
+  const ingredientesHtml = recipe.ingredientes
+    .split('\n')
+    .filter(l => l.trim() !== '')
+    .map(l => `<li>${escapeHtml(l)}</li>`)
+    .join('');
+
+  return `<strong>${escapeHtml(recipe.nome)}</strong> 🎉<br>
+    <p class="field-label" style="margin-top:8px;">Ingredientes</p>
+    <ul>${ingredientesHtml}</ul>
+    <p class="field-label">Modo de preparo</p>
+    <p>${escapeHtml(recipe.modo)}</p>`;
+}
+
 function buscarReceitaPorIngredientes(mensagem) {
+  const normalizada = normalizar(mensagem).trim();
+
+  if (['outra', 'outra opcao', 'outra receita', 'proxima', 'mais uma'].includes(normalizada)) {
+    if (ultimasCandidatas.length === 0) {
+      return 'Ainda não fizemos nenhuma busca. Me conta o que você tem em casa primeiro! 😊';
+    }
+    ultimoIndiceCandidata++;
+    if (ultimoIndiceCandidata >= ultimasCandidatas.length) {
+      return 'Essas eram todas as receitas que encontrei com esses ingredientes! Quer buscar com outros ingredientes?';
+    }
+    return 'Encontrei essa também: ' + formatarReceitaChat(ultimasCandidatas[ultimoIndiceCandidata].recipe);
+  }
+
   const palavras = extrairPalavrasChave(mensagem);
 
   if (palavras.length === 0) {
@@ -398,24 +446,19 @@ function buscarReceitaPorIngredientes(mensagem) {
     return { doc, recipe, acertos: acertos.length };
   }).filter(c => c.acertos > 0);
 
+  candidatas.sort((a, b) => b.acertos - a.acertos);
+  ultimasCandidatas = candidatas;
+  ultimoIndiceCandidata = 0;
+
   if (candidatas.length === 0) {
     return 'Não encontrei nenhuma receita salva com esses ingredientes. Que tal cadastrar uma nova? 🍳';
   }
 
-  candidatas.sort((a, b) => b.acertos - a.acertos);
-  const melhor = candidatas[0];
-
-  const ingredientesHtml = melhor.recipe.ingredientes
-    .split('\n')
-    .filter(l => l.trim() !== '')
-    .map(l => `<li>${escapeHtml(l)}</li>`)
-    .join('');
-
-  return `Encontrei essa pra você: <strong>${escapeHtml(melhor.recipe.nome)}</strong> 🎉<br>
-    <p class="field-label" style="margin-top:8px;">Ingredientes</p>
-    <ul>${ingredientesHtml}</ul>
-    <p class="field-label">Modo de preparo</p>
-    <p>${escapeHtml(melhor.recipe.modo)}</p>`;
+  let resposta = 'Encontrei essa pra você: ' + formatarReceitaChat(candidatas[0].recipe);
+  if (candidatas.length > 1) {
+    resposta += '<br><br><em>Digite "outra" se quiser ver mais uma opção.</em>';
+  }
+  return resposta;
 }
 
 function enviarMensagemChat() {

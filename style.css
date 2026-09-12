@@ -62,30 +62,24 @@ header h1 {
 }
 
 main {
-  max-width: 1240px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 16px 20px 64px;
   display: grid;
-  grid-template-columns: 320px 320px 1fr;
-  gap: 24px;
+  grid-template-columns: 340px 1fr;
+  gap: 32px;
   align-items: start;
 }
 
-@media (max-width: 1080px) {
-  main {
-    grid-template-columns: 1fr 1fr;
-  }
-  .list-section {
-    grid-column: 1 / -1;
-  }
+.sidebar-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 @media (max-width: 720px) {
   main {
     grid-template-columns: 1fr;
-  }
-  .list-section {
-    grid-column: auto;
   }
 }
 
@@ -395,7 +389,6 @@ button:hover {
 }
 
 .chat-section {
-  height: fit-content;
 }
 
 .chat-hint {
