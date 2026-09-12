@@ -12,6 +12,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 const receitasRef = db.collection('receitas');
+const comentariosRef = db.collection('comentarios');
 
 // ---------- Elementos da tela de login/cadastro ----------
 const loginScreen = document.getElementById('login-screen');
@@ -206,6 +207,16 @@ function renderRecipes() {
       <ul>${ingredientesHtml}</ul>
       <p class="field-label">Modo de preparo</p>
       <p>${escapeHtml(recipe.modo)}</p>
+      <div class="comments-section">
+        <button class="toggle-comments-btn" data-id="${doc.id}">💬 Comentários</button>
+        <div class="comments-box" data-comments-for="${doc.id}" style="display:none;">
+          <div class="comments-list" data-list-for="${doc.id}"></div>
+          <div class="comment-input-row">
+            <input type="text" class="comment-input" data-comment-input-for="${doc.id}" placeholder="Deixe um comentário...">
+            <button type="button" class="comment-send-btn" data-comment-send-for="${doc.id}">Enviar</button>
+          </div>
+        </div>
+      </div>
     `;
 
     list.appendChild(card);
@@ -299,4 +310,128 @@ filterBar.addEventListener('click', function (event) {
   event.target.classList.add('active');
 
   renderRecipes();
+});
+
+// ---------- Comentários ----------
+const comentariosOuvindo = new Set();
+
+list.addEventListener('click', function (event) {
+  if (event.target.classList.contains('toggle-comments-btn')) {
+    const id = event.target.dataset.id;
+    const box = document.querySelector(`.comments-box[data-comments-for="${id}"]`);
+    const abrindo = box.style.display === 'none';
+    box.style.display = abrindo ? 'block' : 'none';
+
+    if (abrindo && !comentariosOuvindo.has(id)) {
+      comentariosOuvindo.add(id);
+      comentariosRef.where('receitaId', '==', id).orderBy('criadoEm', 'asc').onSnapshot((snapshot) => {
+        const listaEl = document.querySelector(`.comments-list[data-list-for="${id}"]`);
+        if (!listaEl) return;
+        listaEl.innerHTML = snapshot.docs.map((doc) => {
+          const c = doc.data();
+          return `<p class="comment-item"><strong>${escapeHtml(c.autorNome)}:</strong> ${escapeHtml(c.texto)}</p>`;
+        }).join('') || '<p class="comment-empty">Nenhum comentário ainda.</p>';
+      });
+    }
+  }
+
+  if (event.target.classList.contains('comment-send-btn')) {
+    const id = event.target.dataset.commentSendFor;
+    const input = document.querySelector(`.comment-input[data-comment-input-for="${id}"]`);
+    const texto = input.value.trim();
+    if (!texto) return;
+
+    comentariosRef.add({
+      receitaId: id,
+      texto,
+      autorId: usuarioAtual.uid,
+      autorNome: usuarioAtual.displayName || usuarioAtual.email,
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    input.value = '';
+  }
+});
+
+// ---------- Chat de sugestão por ingredientes ----------
+const chatMensagens = document.getElementById('chat-mensagens');
+const chatInput = document.getElementById('chat-input');
+const chatSendBtn = document.getElementById('chat-send-btn');
+
+const STOPWORDS = ['tenho','tenho','e','com','um','uma','uns','umas','de','em','casa','so','somente',
+  'para','pra','quero','algo','que','leve','rapido','ai','ia','por','favor','pode','poderia','ser',
+  'fazer','uso','usar','tem','o','a','os','as','no','na','nos','nas','do','da','dos','das','me',
+  'ajuda','uma','receita','preciso'];
+
+function normalizar(texto) {
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function extrairPalavrasChave(texto) {
+  return normalizar(texto)
+    .split(/[^a-zà-ú]+/)
+    .filter(p => p.length > 2 && !STOPWORDS.includes(p));
+}
+
+function adicionarMensagemChat(texto, autor) {
+  const div = document.createElement('div');
+  div.className = autor === 'user' ? 'chat-msg chat-user' : 'chat-msg chat-bot';
+  div.innerHTML = texto;
+  chatMensagens.appendChild(div);
+  chatMensagens.scrollTop = chatMensagens.scrollHeight;
+}
+
+function buscarReceitaPorIngredientes(mensagem) {
+  const palavras = extrairPalavrasChave(mensagem);
+
+  if (palavras.length === 0) {
+    return 'Me conta pelo menos um ingrediente que você tem, tipo "tenho ovos e leite" 😊';
+  }
+
+  const candidatas = todasReceitas.map((doc) => {
+    const recipe = doc.data();
+    const textoReceita = normalizar(recipe.nome + ' ' + recipe.ingredientes);
+    const acertos = palavras.filter(p => textoReceita.includes(p));
+    return { doc, recipe, acertos: acertos.length };
+  }).filter(c => c.acertos > 0);
+
+  if (candidatas.length === 0) {
+    return 'Não encontrei nenhuma receita salva com esses ingredientes. Que tal cadastrar uma nova? 🍳';
+  }
+
+  candidatas.sort((a, b) => b.acertos - a.acertos);
+  const melhor = candidatas[0];
+
+  const ingredientesHtml = melhor.recipe.ingredientes
+    .split('\n')
+    .filter(l => l.trim() !== '')
+    .map(l => `<li>${escapeHtml(l)}</li>`)
+    .join('');
+
+  return `Encontrei essa pra você: <strong>${escapeHtml(melhor.recipe.nome)}</strong> 🎉<br>
+    <p class="field-label" style="margin-top:8px;">Ingredientes</p>
+    <ul>${ingredientesHtml}</ul>
+    <p class="field-label">Modo de preparo</p>
+    <p>${escapeHtml(melhor.recipe.modo)}</p>`;
+}
+
+function enviarMensagemChat() {
+  const texto = chatInput.value.trim();
+  if (!texto) return;
+
+  adicionarMensagemChat(escapeHtml(texto), 'user');
+  chatInput.value = '';
+
+  setTimeout(() => {
+    const resposta = buscarReceitaPorIngredientes(texto);
+    adicionarMensagemChat(resposta, 'bot');
+  }, 300);
+}
+
+chatSendBtn.addEventListener('click', enviarMensagemChat);
+chatInput.addEventListener('keydown', function (event) {
+  if (event.key === 'Enter') enviarMensagemChat();
 });
