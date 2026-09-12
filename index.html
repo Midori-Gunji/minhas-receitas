@@ -128,6 +128,9 @@
           <option value="Sobremesa">Sobremesa</option>
         </select>
 
+        <label for="tempo">Tempo de preparo</label>
+        <input type="text" id="tempo" placeholder="Ex: 30 min">
+
         <label>Dificuldade</label>
         <div class="star-picker" id="star-picker" data-valor="0">
           <span class="star" data-valor="1">★</span>
@@ -171,13 +174,22 @@
     <section class="list-section">
       <h2>Receitas</h2>
       <input type="text" id="search-input" class="search-input" placeholder="Buscar por nome ou ingrediente...">
-      <div class="filter-bar" id="filter-bar">
-        <button class="filter-btn active" data-filter="Todas">Todas</button>
-        <button class="filter-btn" data-filter="Café da manhã">Café da manhã</button>
-        <button class="filter-btn" data-filter="Almoço/Janta">Almoço/Janta</button>
-        <button class="filter-btn" data-filter="Lanche da tarde">Lanche da tarde</button>
-        <button class="filter-btn" data-filter="Sobremesa">Sobremesa</button>
+      <div class="list-toolbar">
+        <div class="filter-bar" id="filter-bar">
+          <button class="filter-btn active" data-filter="Todas">Todas</button>
+          <button class="filter-btn" data-filter="Café da manhã">Café da manhã</button>
+          <button class="filter-btn" data-filter="Almoço/Janta">Almoço/Janta</button>
+          <button class="filter-btn" data-filter="Lanche da tarde">Lanche da tarde</button>
+          <button class="filter-btn" data-filter="Sobremesa">Sobremesa</button>
+          <button class="filter-btn" data-filter="Favoritas">⭐ Favoritas</button>
+        </div>
+        <select id="ordenar-select" class="ordenar-select">
+          <option value="recente">Mais recentes</option>
+          <option value="alfabetica">Ordem alfabética</option>
+          <option value="dificuldade">Dificuldade</option>
+        </select>
       </div>
+      <div id="loading-msg" class="loading-msg">Carregando receitas...</div>
       <div id="recipe-list" class="recipe-list">
         <!-- as receitas aparecem aqui automaticamente -->
       </div>

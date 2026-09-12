@@ -108,17 +108,22 @@ const starPicker = document.getElementById('star-picker');
 
 const nomeInput = document.getElementById('nome');
 const categoriaInput = document.getElementById('categoria');
+const tempoInput = document.getElementById('tempo');
 const ingredientesInput = document.getElementById('ingredientes');
 const modoInput = document.getElementById('modo');
+const ordenarSelect = document.getElementById('ordenar-select');
+const loadingMsg = document.getElementById('loading-msg');
 
 let todasReceitas = [];
 let minhasReceitasDocs = [];
 let publicasDocs = [];
 let filtroAtual = 'Todas';
 let termoBusca = '';
+let ordenacaoAtual = 'recente';
 let editandoId = null;
 let dificuldadeSelecionada = 0;
 const comentariosAbertos = new Set();
+let meusFavoritos = new Set();
 
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -154,6 +159,11 @@ function carregarReceitas() {
     publicasDocs = snapshot.docs;
     mesclarEExibir();
   });
+
+  db.collection('favoritos').where('autorId', '==', usuarioAtual.uid).onSnapshot((snapshot) => {
+    meusFavoritos = new Set(snapshot.docs.map(d => d.data().receitaId));
+    renderRecipes();
+  });
 }
 
 function mesclarEExibir() {
@@ -161,13 +171,18 @@ function mesclarEExibir() {
   minhasReceitasDocs.forEach((doc) => mapa.set(doc.id, doc));
   publicasDocs.forEach((doc) => mapa.set(doc.id, doc));
   todasReceitas = Array.from(mapa.values());
+  loadingMsg.style.display = 'none';
   renderRecipes();
 }
 
 function renderRecipes() {
-  let docsFiltrados = filtroAtual === 'Todas'
-    ? todasReceitas
-    : todasReceitas.filter(doc => doc.data().categoria === filtroAtual);
+  let docsFiltrados = todasReceitas;
+
+  if (filtroAtual === 'Favoritas') {
+    docsFiltrados = docsFiltrados.filter(doc => meusFavoritos.has(doc.id));
+  } else if (filtroAtual !== 'Todas') {
+    docsFiltrados = docsFiltrados.filter(doc => doc.data().categoria === filtroAtual);
+  }
 
   if (termoBusca) {
     docsFiltrados = docsFiltrados.filter((doc) => {
@@ -176,6 +191,16 @@ function renderRecipes() {
       return texto.includes(termoBusca);
     });
   }
+
+  docsFiltrados = [...docsFiltrados].sort((a, b) => {
+    const ra = a.data();
+    const rb = b.data();
+    if (ordenacaoAtual === 'alfabetica') return ra.nome.localeCompare(rb.nome);
+    if (ordenacaoAtual === 'dificuldade') return (rb.dificuldade || 0) - (ra.dificuldade || 0);
+    const ta = ra.criadoEm ? ra.criadoEm.toMillis() : 0;
+    const tb = rb.criadoEm ? rb.criadoEm.toMillis() : 0;
+    return tb - ta;
+  });
 
   list.innerHTML = '';
   emptyMessage.style.display = docsFiltrados.length === 0 ? 'block' : 'none';
@@ -197,19 +222,33 @@ function renderRecipes() {
          <button class="delete-btn" data-id="${doc.id}">Remover</button>`
       : '';
 
+    const ehFavorita = meusFavoritos.has(doc.id);
+    const botaoFavoritar = !souAutor
+      ? `<button class="favorite-btn ${ehFavorita ? 'favorited' : ''}" data-id="${doc.id}">${ehFavorita ? '⭐ Favoritada' : '☆ Favoritar'}</button>`
+      : '';
+
+    const qtdComentarios = comentariosCache.has(doc.id) ? comentariosCache.get(doc.id).length : null;
+    const textoComentarios = qtdComentarios !== null ? `💬 Comentários (${qtdComentarios})` : '💬 Comentários';
+
+    const tempoHtml = recipe.tempo
+      ? `<p class="tempo-tag">⏱ ${escapeHtml(recipe.tempo)}</p>`
+      : '';
+
     card.innerHTML = `
-      <div class="card-actions">${botoesEdicao}</div>
+      <div class="card-actions">${botoesEdicao}${botaoFavoritar}</div>
       <span class="category-tag">${escapeHtml(recipe.categoria || 'Sem categoria')}</span>
       <span class="visibility-tag ${recipe.visibilidade}">${recipe.visibilidade === 'publica' ? 'Pública' : 'Privada'}</span>
       <h3>${escapeHtml(recipe.nome)}</h3>
       <p class="author-tag">Por ${escapeHtml(recipe.autorNome || 'Anônimo')}</p>
+      ${tempoHtml}
       <p class="stars-display">Dificuldade: <span class="stars-only">${estrelasParaTexto(recipe.dificuldade || 0)}</span></p>
       <p class="field-label">Ingredientes</p>
       <ul>${ingredientesHtml}</ul>
       <p class="field-label">Modo de preparo</p>
       <p>${escapeHtml(recipe.modo)}</p>
       <div class="comments-section">
-        <button class="toggle-comments-btn" data-id="${doc.id}">💬 Comentários</button>
+        <button class="toggle-comments-btn" data-id="${doc.id}">${textoComentarios}</button>
+        <button class="share-btn" data-id="${doc.id}">🔗 Compartilhar</button>
         <div class="comments-box" data-comments-for="${doc.id}" style="display:${comentariosAbertos.has(doc.id) ? 'block' : 'none'};">
           <div class="comments-list" data-list-for="${doc.id}"></div>
           <div class="comment-input-row">
@@ -232,6 +271,7 @@ function entrarModoEdicao(id, recipe) {
   editandoId = id;
   nomeInput.value = recipe.nome;
   categoriaInput.value = recipe.categoria || '';
+  tempoInput.value = recipe.tempo || '';
   ingredientesInput.value = recipe.ingredientes;
   modoInput.value = recipe.modo;
   dificuldadeSelecionada = recipe.dificuldade || 0;
@@ -258,6 +298,7 @@ form.addEventListener('submit', function (event) {
 
   const nome = nomeInput.value.trim();
   const categoria = categoriaInput.value;
+  const tempo = tempoInput.value.trim();
   const ingredientes = ingredientesInput.value.trim();
   const modo = modoInput.value.trim();
   const visibilidade = document.querySelector('input[name="visibilidade"]:checked').value;
@@ -267,6 +308,7 @@ form.addEventListener('submit', function (event) {
   const dados = {
     nome,
     categoria,
+    tempo,
     ingredientes,
     modo,
     visibilidade,
@@ -292,7 +334,9 @@ list.addEventListener('click', function (event) {
   if (!id) return;
 
   if (event.target.classList.contains('delete-btn')) {
-    receitasRef.doc(id).delete();
+    if (confirm('Tem certeza que quer apagar essa receita? Essa ação não pode ser desfeita.')) {
+      receitasRef.doc(id).delete();
+    }
   }
 
   if (event.target.classList.contains('edit-btn')) {
@@ -303,6 +347,11 @@ list.addEventListener('click', function (event) {
 
 searchInput.addEventListener('input', function () {
   termoBusca = searchInput.value.trim().toLowerCase();
+  renderRecipes();
+});
+
+ordenarSelect.addEventListener('change', function () {
+  ordenacaoAtual = ordenarSelect.value;
   renderRecipes();
 });
 
@@ -353,6 +402,8 @@ list.addEventListener('click', function (event) {
       comentariosRef.where('receitaId', '==', id).orderBy('criadoEm', 'asc').onSnapshot((snapshot) => {
         comentariosCache.set(id, snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
         renderComentariosNaTela(id);
+        const btn = document.querySelector(`.toggle-comments-btn[data-id="${id}"]`);
+        if (btn) btn.textContent = `💬 Comentários (${snapshot.docs.length})`;
       });
     }
   }
@@ -376,7 +427,33 @@ list.addEventListener('click', function (event) {
 
   if (event.target.classList.contains('delete-comment-btn')) {
     const commentId = event.target.dataset.commentId;
-    comentariosRef.doc(commentId).delete();
+    if (confirm('Apagar esse comentário?')) {
+      comentariosRef.doc(commentId).delete();
+    }
+  }
+});
+
+// ---------- Favoritar e compartilhar ----------
+list.addEventListener('click', function (event) {
+  if (event.target.classList.contains('favorite-btn')) {
+    const id = event.target.dataset.id;
+    const favId = usuarioAtual.uid + '_' + id;
+    const favRef = db.collection('favoritos').doc(favId);
+
+    if (meusFavoritos.has(id)) {
+      favRef.delete();
+    } else {
+      favRef.set({ autorId: usuarioAtual.uid, receitaId: id });
+    }
+  }
+
+  if (event.target.classList.contains('share-btn')) {
+    const id = event.target.dataset.id;
+    const url = window.location.origin + window.location.pathname + '#receita-' + id;
+    navigator.clipboard.writeText(url).then(() => {
+      event.target.textContent = '✅ Link copiado!';
+      setTimeout(() => { event.target.textContent = '🔗 Compartilhar'; }, 2000);
+    });
   }
 });
 

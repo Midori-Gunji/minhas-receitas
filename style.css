@@ -208,6 +208,70 @@ button:hover {
   cursor: pointer;
 }
 
+.list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ordenar-select {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+  width: auto;
+}
+
+.loading-msg {
+  text-align: center;
+  color: var(--pink-dark);
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 1.2rem;
+  padding: 20px;
+}
+
+.favorite-btn {
+  border: none;
+  border-radius: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 5px 12px;
+  margin-top: 0;
+  box-shadow: none;
+  background: #f0e6da;
+  color: #8a6a1f;
+}
+
+.favorite-btn.favorited {
+  background: var(--yellow);
+}
+
+.tempo-tag {
+  font-size: 0.95rem;
+  color: var(--ink);
+  opacity: 0.8;
+  margin: 4px 0;
+}
+
+.share-btn {
+  background: none;
+  border: none;
+  color: var(--mint-dark);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+  margin: 0 0 0 16px;
+  box-shadow: none;
+}
+
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
