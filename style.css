@@ -632,6 +632,11 @@ button:hover {
   margin-top: 16px;
 }
 
+.auth-toggle:first-of-type {
+  margin-top: 12px;
+  margin-bottom: -6px;
+}
+
 .auth-toggle a {
   color: var(--pink-dark);
   font-weight: 700;

@@ -25,6 +25,7 @@ const authBtn = document.getElementById('auth-btn');
 const authErro = document.getElementById('auth-erro');
 const authToggleLink = document.getElementById('auth-toggle-link');
 const authToggleTexto = document.getElementById('auth-toggle-texto');
+const forgotPasswordLink = document.getElementById('forgot-password-link');
 const logoutBtn = document.getElementById('logout-btn');
 const saudacao = document.getElementById('saudacao');
 
@@ -74,8 +75,30 @@ function traduzErro(code) {
   if (code === 'auth/email-already-in-use') return 'Esse e-mail já tem conta.';
   if (code === 'auth/weak-password') return 'A senha precisa ter pelo menos 6 caracteres.';
   if (code === 'auth/invalid-email') return 'E-mail inválido.';
+  if (code === 'auth/user-not-found') return 'Não existe conta com esse e-mail.';
   return 'E-mail ou senha incorretos.';
 }
+
+forgotPasswordLink.addEventListener('click', function (e) {
+  e.preventDefault();
+  authErro.textContent = '';
+  const email = authEmail.value.trim();
+
+  if (!email) {
+    authErro.textContent = 'Digite seu e-mail no campo acima primeiro, depois clique em "Esqueci minha senha".';
+    return;
+  }
+
+  auth.sendPasswordResetEmail(email)
+    .then(() => {
+      authErro.style.color = '#3a6b3a';
+      authErro.textContent = 'Te mandamos um e-mail com um link pra criar uma senha nova. Confere sua caixa de entrada (e o spam)!';
+    })
+    .catch((err) => {
+      authErro.style.color = '';
+      authErro.textContent = traduzErro(err.code);
+    });
+});
 
 logoutBtn.addEventListener('click', function () {
   auth.signOut();
@@ -249,6 +272,7 @@ function renderRecipes() {
       <div class="comments-section">
         <button class="toggle-comments-btn" data-id="${doc.id}">${textoComentarios}</button>
         <button class="share-btn" data-id="${doc.id}">🔗 Compartilhar</button>
+
         <div class="comments-box" data-comments-for="${doc.id}" style="display:${comentariosAbertos.has(doc.id) ? 'block' : 'none'};">
           <div class="comments-list" data-list-for="${doc.id}"></div>
           <div class="comment-input-row">
