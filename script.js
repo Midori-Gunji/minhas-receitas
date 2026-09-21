@@ -218,7 +218,7 @@ friendRequestsList.addEventListener('click', function (event) {
   if (event.target.classList.contains('accept-friend-btn')) {
     solicitacoesRef.doc(requestId).get().then((doc) => {
       const r = doc.data();
-      return amizadesRef.doc(requestId).set({
+      return amizadesRef.doc(`${r.deId}_${usuarioAtual.uid}`).set({
         deId: r.deId,
         deNome: r.deNome,
         paraId: usuarioAtual.uid,
@@ -380,6 +380,12 @@ function carregarReceitas() {
     mesclarEExibir();
   });
 
+  // receitas de amigos: quem pode ver está gravado no proprio documento
+  receitasRef.where('visivelPara', 'array-contains', usuarioAtual.uid).onSnapshot((snapshot) => {
+    amigosReceitasDocs = snapshot.docs;
+    mesclarEExibir();
+  });
+
   db.collection('favoritos').where('autorId', '==', usuarioAtual.uid).onSnapshot((snapshot) => {
     meusFavoritos = new Set(snapshot.docs.map(d => d.data().receitaId));
     renderRecipes();
@@ -389,7 +395,6 @@ function carregarReceitas() {
   solicitacoesRef.where('paraId', '==', usuarioAtual.uid).onSnapshot(renderFriendRequests);
 }
 
-let unsubscribeAmigosReceitas = null;
 
 function escutarAmizades() {
   const meuUid = usuarioAtual.uid;
@@ -422,27 +427,26 @@ function escutarAmizades() {
     });
     meusAmigos = amigosDocs.map(a => a.uid);
     renderFriendsList();
-    atualizarReceitasDeAmigos();
+    sincronizarVisivelPara();
   }
 }
 
-function atualizarReceitasDeAmigos() {
-  if (unsubscribeAmigosReceitas) unsubscribeAmigosReceitas();
+// Mantém o campo "visivelPara" das MINHAS receitas de amigos em dia
+// sempre que a lista de amigos muda (adicionou ou removeu alguém).
+function sincronizarVisivelPara() {
+  if (!usuarioAtual) return;
+  const lista = [...meusAmigos];
 
-  if (meusAmigos.length === 0) {
-    amigosReceitasDocs = [];
-    mesclarEExibir();
-    return;
-  }
+  minhasReceitasDocs.forEach((doc) => {
+    const d = doc.data();
+    if (d.visibilidade !== 'amigos') return;
 
-  const uids = meusAmigos.slice(0, 30);
-  unsubscribeAmigosReceitas = receitasRef
-    .where('visibilidade', '==', 'amigos')
-    .where('autorId', 'in', uids)
-    .onSnapshot((snapshot) => {
-      amigosReceitasDocs = snapshot.docs;
-      mesclarEExibir();
-    });
+    const atual = d.visivelPara || [];
+    const igual = atual.length === lista.length && atual.every((u) => lista.includes(u));
+    if (!igual) {
+      receitasRef.doc(doc.id).update({ visivelPara: lista });
+    }
+  });
 }
 
 function mesclarEExibir() {
@@ -618,6 +622,7 @@ form.addEventListener('submit', function (event) {
     ingredientes,
     modo,
     visibilidade,
+    visivelPara: visibilidade === 'amigos' ? [...meusAmigos] : [],
     dificuldade: dificuldadeSelecionada,
     autorId: usuarioAtual.uid,
     autorNome: usuarioAtual.displayName || usuarioAtual.email
