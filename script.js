@@ -770,52 +770,88 @@ list.addEventListener('change', function (event) {
 });
 
 function exportarReceitaPDF(recipe) {
-  const janela = window.open('', '_blank');
-  if (!janela) {
-    alert('Seu navegador bloqueou a nova janela. Permita pop-ups pra esse site e tente de novo.');
-    return;
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+
+  const margemEsquerda = 48;
+  const larguraUtil = 595 - margemEsquerda * 2; // A4 em pt ~595 de largura
+  let y = 60;
+
+  function pularLinha(altura) {
+    y += altura;
+    if (y > 780) {
+      pdf.addPage();
+      y = 60;
+    }
   }
 
-  const ingredientesHtml = recipe.ingredientes
-    .split('\n')
-    .filter(l => l.trim() !== '')
-    .map(l => `<li>${escapeHtml(l)}</li>`)
-    .join('');
+  // Título
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(20);
+  pdf.setTextColor(232, 116, 143);
+  pdf.text(recipe.nome, margemEsquerda, y);
+  pularLinha(22);
 
+  // Meta (categoria, tempo, porções)
   const metaPartes = [recipe.categoria, recipe.tempo, recipe.porcoes ? recipe.porcoes + ' porções' : null]
     .filter(Boolean)
-    .map(escapeHtml)
-    .join(' • ');
+    .join('   •   ');
+  if (metaPartes) {
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+    pdf.setTextColor(120, 120, 120);
+    pdf.text(metaPartes, margemEsquerda, y);
+    pularLinha(28);
+  } else {
+    pularLinha(10);
+  }
 
-  janela.document.write(`
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-    <head>
-      <meta charset="UTF-8">
-      <title>${escapeHtml(recipe.nome)}</title>
-      <style>
-        body { font-family: Georgia, 'Times New Roman', serif; max-width: 700px; margin: 40px auto; padding: 0 20px; color: #333; }
-        h1 { color: #e8748f; margin-bottom: 4px; }
-        .meta { color: #777; font-size: 0.95rem; margin-bottom: 24px; }
-        h2 { color: #6fa98a; font-size: 1.1rem; margin-top: 24px; }
-        ul { padding-left: 20px; }
-        li { margin-bottom: 6px; }
-        p { line-height: 1.6; white-space: pre-wrap; }
-      </style>
-    </head>
-    <body>
-      <h1>${escapeHtml(recipe.nome)}</h1>
-      <p class="meta">${metaPartes}</p>
-      <h2>Ingredientes</h2>
-      <ul>${ingredientesHtml}</ul>
-      <h2>Modo de preparo</h2>
-      <p>${escapeHtml(recipe.modo)}</p>
-    </body>
-    </html>
-  `);
-  janela.document.close();
-  janela.focus();
-  setTimeout(() => janela.print(), 300);
+  // Ingredientes
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(14);
+  pdf.setTextColor(111, 169, 138);
+  pdf.text('Ingredientes', margemEsquerda, y);
+  pularLinha(20);
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(12);
+  pdf.setTextColor(50, 50, 50);
+  recipe.ingredientes
+    .split('\n')
+    .filter((l) => l.trim() !== '')
+    .forEach((linha) => {
+      const linhas = pdf.splitTextToSize('•  ' + linha.trim(), larguraUtil);
+      linhas.forEach((l) => {
+        pdf.text(l, margemEsquerda, y);
+        pularLinha(17);
+      });
+    });
+
+  pularLinha(10);
+
+  // Modo de preparo
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(14);
+  pdf.setTextColor(111, 169, 138);
+  pdf.text('Modo de preparo', margemEsquerda, y);
+  pularLinha(20);
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(12);
+  pdf.setTextColor(50, 50, 50);
+  const linhasModo = pdf.splitTextToSize(recipe.modo, larguraUtil);
+  linhasModo.forEach((l) => {
+    pdf.text(l, margemEsquerda, y);
+    pularLinha(17);
+  });
+
+  const nomeArquivo = (recipe.nome || 'receita')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '') || 'receita';
+
+  pdf.save(`${nomeArquivo}.pdf`);
 }
 
 // ---------- Favoritar e compartilhar ----------
