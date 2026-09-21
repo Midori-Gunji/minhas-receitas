@@ -108,8 +108,13 @@
   </div>
 
   <header>
-    <button id="profile-btn" class="profile-btn">👤 Perfil</button>
-    <button id="logout-btn" class="logout-btn">Sair</button>
+    <div class="header-bar">
+      <button id="profile-btn" class="profile-btn">
+        <svg viewBox="0 0 24 24" class="btn-icon"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Perfil
+      </button>
+      <button id="logout-btn" class="logout-btn">Sair</button>
+    </div>
 
     <h1>Meu Caderno de Receitas</h1>
     <p class="subtitle" id="saudacao">Suas receitinhas queridas, todas guardadinhas aqui.</p>
@@ -208,26 +213,38 @@
   <div id="profile-modal" class="profile-modal" style="display:none;">
     <div class="profile-box">
       <button id="profile-close-btn" class="profile-close-btn">✕</button>
-      <div class="profile-avatar-big" id="profile-avatar-big"></div>
-      <h2>Meu Perfil 🌸</h2>
-      <label for="profile-nome">Nome</label>
-      <input type="text" id="profile-nome">
-      <label>E-mail</label>
-      <p class="profile-email" id="profile-email"></p>
+
+      <div class="profile-header">
+        <div class="profile-avatar-big" id="profile-avatar-big"></div>
+        <h2>Meu Perfil</h2>
+        <p class="profile-email" id="profile-email"></p>
+      </div>
+
       <div class="profile-stats">
         <div class="profile-stat"><strong id="profile-count-receitas">0</strong><span>receitas</span></div>
         <div class="profile-stat"><strong id="profile-count-favoritas">0</strong><span>favoritas</span></div>
       </div>
-      <button id="profile-save-btn">Salvar nome</button>
-      <p id="profile-status" class="profile-status"></p>
+
+      <div class="profile-card">
+        <label for="profile-nome">Nome de exibição</label>
+        <div class="profile-name-row">
+          <input type="text" id="profile-nome">
+          <button id="profile-save-btn">Salvar</button>
+        </div>
+        <p id="profile-status" class="profile-status"></p>
+      </div>
 
       <div class="friends-section">
-        <h3>Amigos</h3>
-        <div class="add-friend-row">
-          <input type="email" id="friend-email-input" placeholder="E-mail do amigo(a)">
-          <button type="button" id="send-friend-request-btn">Adicionar</button>
+        <h3>🌸 Amigos</h3>
+
+        <div class="profile-card">
+          <label for="friend-email-input">Adicionar por e-mail</label>
+          <div class="add-friend-row">
+            <input type="email" id="friend-email-input" placeholder="email@exemplo.com">
+            <button type="button" id="send-friend-request-btn">Enviar</button>
+          </div>
+          <p id="friend-status" class="profile-status"></p>
         </div>
-        <p id="friend-status" class="profile-status"></p>
 
         <div id="friend-requests-box" style="display:none;">
           <p class="friends-subtitle">Pedidos recebidos</p>
