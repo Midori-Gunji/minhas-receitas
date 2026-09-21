@@ -510,6 +510,155 @@ button:hover {
   font-size: 1rem;
 }
 
+/* ---------- Modal de Perfil ---------- */
+.profile-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(90, 67, 64, 0.45);
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.profile-box {
+  background: var(--card);
+  border-radius: 22px;
+  padding: 32px;
+  width: 90%;
+  max-width: 340px;
+  position: relative;
+  box-shadow: 0 8px 0 var(--pink);
+}
+
+.profile-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--ink);
+  margin-top: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.profile-box h2 {
+  margin-top: 0;
+}
+
+.profile-email {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  color: var(--ink);
+  opacity: 0.8;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.profile-stat {
+  text-align: center;
+  flex: 1;
+}
+
+.profile-stat strong {
+  display: block;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 1.6rem;
+  color: var(--pink-dark);
+}
+
+.profile-stat span {
+  font-size: 0.8rem;
+  color: var(--ink);
+  opacity: 0.7;
+}
+
+.profile-status {
+  font-size: 0.85rem;
+  color: var(--mint-dark);
+  margin-top: 10px;
+  min-height: 1.2em;
+}
+
+/* ---------- Porções ---------- */
+.portions-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.portion-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--pink-dark);
+  background: var(--card);
+  color: var(--pink-dark);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 0;
+  box-shadow: none;
+  line-height: 1;
+}
+
+.portion-value {
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ---------- Ingredientes marcáveis ---------- */
+.ingredient-list {
+  list-style: none;
+  padding-left: 0 !important;
+}
+
+.ingredient-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.ingredient-checkbox {
+  margin-top: 4px;
+}
+
+.ingredient-item.checked span {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+/* ---------- Exportar PDF ---------- */
+.export-pdf-btn {
+  background: none;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 6px 14px;
+  margin-top: 16px;
+  box-shadow: none;
+}
+
+.export-pdf-btn:hover {
+  border-color: var(--pink-dark);
+  transform: none;
+}
+
 .comments-section {
   margin-top: 16px;
   border-top: 1.5px dashed var(--line);
@@ -642,6 +791,23 @@ button:hover {
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
+}
+
+.profile-btn {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  padding: 8px 16px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-top: 0;
+  box-shadow: none;
 }
 
 .logout-btn {

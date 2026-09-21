@@ -108,6 +108,7 @@
   </div>
 
   <header>
+    <button id="profile-btn" class="profile-btn">👤 Perfil</button>
     <button id="logout-btn" class="logout-btn">Sair</button>
 
     <h1>Meu Caderno de Receitas</h1>
@@ -133,6 +134,9 @@
 
         <label for="tempo">Tempo de preparo</label>
         <input type="text" id="tempo" placeholder="Ex: 30 min">
+
+        <label for="porcoes">Rende quantas porções?</label>
+        <input type="number" id="porcoes" min="1" value="4">
 
         <label>Dificuldade</label>
         <div class="star-picker" id="star-picker" data-valor="0">
@@ -199,6 +203,23 @@
       <p id="empty-message" class="empty-message">Nenhuma receita por aqui ainda. Adicione a primeira ao lado!</p>
     </section>
   </main>
+
+  <div id="profile-modal" class="profile-modal" style="display:none;">
+    <div class="profile-box">
+      <button id="profile-close-btn" class="profile-close-btn">✕</button>
+      <h2>Meu Perfil</h2>
+      <label for="profile-nome">Nome</label>
+      <input type="text" id="profile-nome">
+      <label>E-mail</label>
+      <p class="profile-email" id="profile-email"></p>
+      <div class="profile-stats">
+        <div class="profile-stat"><strong id="profile-count-receitas">0</strong><span>receitas</span></div>
+        <div class="profile-stat"><strong id="profile-count-favoritas">0</strong><span>favoritas</span></div>
+      </div>
+      <button id="profile-save-btn">Salvar nome</button>
+      <p id="profile-status" class="profile-status"></p>
+    </div>
+  </div>
 
   </div>
 

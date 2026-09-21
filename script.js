@@ -27,6 +27,15 @@ const authToggleLink = document.getElementById('auth-toggle-link');
 const authToggleTexto = document.getElementById('auth-toggle-texto');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
 const logoutBtn = document.getElementById('logout-btn');
+const profileBtn = document.getElementById('profile-btn');
+const profileModal = document.getElementById('profile-modal');
+const profileCloseBtn = document.getElementById('profile-close-btn');
+const profileNomeInput = document.getElementById('profile-nome');
+const profileEmail = document.getElementById('profile-email');
+const profileCountReceitas = document.getElementById('profile-count-receitas');
+const profileCountFavoritas = document.getElementById('profile-count-favoritas');
+const profileSaveBtn = document.getElementById('profile-save-btn');
+const profileStatus = document.getElementById('profile-status');
 const saudacao = document.getElementById('saudacao');
 
 let modoCadastro = false;
@@ -104,6 +113,44 @@ logoutBtn.addEventListener('click', function () {
   auth.signOut();
 });
 
+profileBtn.addEventListener('click', function () {
+  profileNomeInput.value = usuarioAtual.displayName || '';
+  profileEmail.textContent = usuarioAtual.email;
+  profileCountReceitas.textContent = minhasReceitasDocs.length;
+  profileCountFavoritas.textContent = meusFavoritos.size;
+  profileStatus.textContent = '';
+  profileModal.style.display = 'flex';
+});
+
+profileCloseBtn.addEventListener('click', function () {
+  profileModal.style.display = 'none';
+});
+
+profileModal.addEventListener('click', function (event) {
+  if (event.target === profileModal) profileModal.style.display = 'none';
+});
+
+profileSaveBtn.addEventListener('click', function () {
+  const novoNome = profileNomeInput.value.trim();
+  if (!novoNome) {
+    profileStatus.textContent = 'Digite um nome válido.';
+    return;
+  }
+
+  profileSaveBtn.disabled = true;
+  usuarioAtual.updateProfile({ displayName: novoNome })
+    .then(() => {
+      saudacao.textContent = 'Bem-vinda(o), ' + novoNome + '!';
+      profileStatus.textContent = 'Nome atualizado! (receitas já cadastradas mantêm o nome antigo como autor)';
+    })
+    .catch(() => {
+      profileStatus.textContent = 'Erro ao salvar. Tente de novo.';
+    })
+    .finally(() => {
+      profileSaveBtn.disabled = false;
+    });
+});
+
 let usuarioAtual = null;
 
 auth.onAuthStateChanged(function (user) {
@@ -132,6 +179,7 @@ const starPicker = document.getElementById('star-picker');
 const nomeInput = document.getElementById('nome');
 const categoriaInput = document.getElementById('categoria');
 const tempoInput = document.getElementById('tempo');
+const porcoesInput = document.getElementById('porcoes');
 const ingredientesInput = document.getElementById('ingredientes');
 const modoInput = document.getElementById('modo');
 const ordenarSelect = document.getElementById('ordenar-select');
@@ -147,11 +195,23 @@ let editandoId = null;
 let dificuldadeSelecionada = 0;
 const comentariosAbertos = new Set();
 let meusFavoritos = new Set();
+const porcoesAtuais = new Map();
 
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+function escalarLinhaIngrediente(linha, fator) {
+  const match = linha.match(/^(\d+[.,]?\d*)\s*/);
+  if (!match) return linha;
+  const original = parseFloat(match[1].replace(',', '.'));
+  if (isNaN(original)) return linha;
+  let novo = original * fator;
+  novo = Math.round(novo * 100) / 100;
+  const novoTexto = Number.isInteger(novo) ? String(novo) : String(novo).replace('.', ',');
+  return novoTexto + ' ' + linha.slice(match[0].length);
 }
 
 // ---------- Seletor de estrelas ----------
@@ -233,11 +293,31 @@ function renderRecipes() {
     const card = document.createElement('div');
     card.className = 'recipe-card';
 
+    const porcoesBase = recipe.porcoes || 1;
+    if (!porcoesAtuais.has(doc.id)) porcoesAtuais.set(doc.id, porcoesBase);
+    const porcoesAtual = porcoesAtuais.get(doc.id);
+    const fatorEscala = porcoesAtual / porcoesBase;
+
     const ingredientesHtml = recipe.ingredientes
       .split('\n')
       .filter(line => line.trim() !== '')
-      .map(line => `<li>${escapeHtml(line)}</li>`)
+      .map((line, idx) => {
+        const linhaEscalada = escalarLinhaIngrediente(line, fatorEscala);
+        return `<li class="ingredient-item"><label class="ingredient-check">
+          <input type="checkbox" class="ingredient-checkbox">
+          <span>${escapeHtml(linhaEscalada)}</span>
+        </label></li>`;
+      })
       .join('');
+
+    const controlePorcoes = recipe.porcoes
+      ? `<div class="portions-control">
+          <span>Porções:</span>
+          <button type="button" class="portion-btn" data-portion-action="menos" data-id="${doc.id}">−</button>
+          <span class="portion-value">${porcoesAtual}</span>
+          <button type="button" class="portion-btn" data-portion-action="mais" data-id="${doc.id}">+</button>
+        </div>`
+      : '';
 
     const souAutor = usuarioAtual && recipe.autorId === usuarioAtual.uid;
     const botoesEdicao = souAutor
@@ -265,10 +345,12 @@ function renderRecipes() {
       <p class="author-tag">Por ${escapeHtml(recipe.autorNome || 'Anônimo')}</p>
       ${tempoHtml}
       <p class="stars-display">Dificuldade: <span class="stars-only">${estrelasParaTexto(recipe.dificuldade || 0)}</span></p>
+      ${controlePorcoes}
       <p class="field-label">Ingredientes</p>
-      <ul>${ingredientesHtml}</ul>
+      <ul class="ingredient-list">${ingredientesHtml}</ul>
       <p class="field-label">Modo de preparo</p>
       <p>${escapeHtml(recipe.modo)}</p>
+      <button type="button" class="export-pdf-btn" data-id="${doc.id}">🖨️ Exportar PDF</button>
       <div class="comments-section">
         <button class="toggle-comments-btn" data-id="${doc.id}">${textoComentarios}</button>
         <button class="share-btn" data-id="${doc.id}">🔗 Compartilhar</button>
@@ -296,6 +378,7 @@ function entrarModoEdicao(id, recipe) {
   nomeInput.value = recipe.nome;
   categoriaInput.value = recipe.categoria || '';
   tempoInput.value = recipe.tempo || '';
+  porcoesInput.value = recipe.porcoes || 4;
   ingredientesInput.value = recipe.ingredientes;
   modoInput.value = recipe.modo;
   dificuldadeSelecionada = recipe.dificuldade || 0;
@@ -323,6 +406,7 @@ form.addEventListener('submit', function (event) {
   const nome = nomeInput.value.trim();
   const categoria = categoriaInput.value;
   const tempo = tempoInput.value.trim();
+  const porcoes = parseInt(porcoesInput.value, 10) || 1;
   const ingredientes = ingredientesInput.value.trim();
   const modo = modoInput.value.trim();
   const visibilidade = document.querySelector('input[name="visibilidade"]:checked').value;
@@ -333,6 +417,7 @@ form.addEventListener('submit', function (event) {
     nome,
     categoria,
     tempo,
+    porcoes,
     ingredientes,
     modo,
     visibilidade,
@@ -456,6 +541,80 @@ list.addEventListener('click', function (event) {
     }
   }
 });
+
+// ---------- Porções, checkboxes de ingrediente e exportar PDF ----------
+list.addEventListener('click', function (event) {
+  if (event.target.classList.contains('portion-btn')) {
+    const id = event.target.dataset.id;
+    const acao = event.target.dataset.portionAction;
+    const atual = porcoesAtuais.get(id) || 1;
+    const novo = acao === 'mais' ? atual + 1 : Math.max(1, atual - 1);
+    porcoesAtuais.set(id, novo);
+    renderRecipes();
+  }
+
+  if (event.target.classList.contains('export-pdf-btn')) {
+    const id = event.target.dataset.id;
+    const doc = todasReceitas.find(d => d.id === id);
+    if (doc) exportarReceitaPDF(doc.data());
+  }
+});
+
+list.addEventListener('change', function (event) {
+  if (event.target.classList.contains('ingredient-checkbox')) {
+    const li = event.target.closest('.ingredient-item');
+    li.classList.toggle('checked', event.target.checked);
+  }
+});
+
+function exportarReceitaPDF(recipe) {
+  const janela = window.open('', '_blank');
+  if (!janela) {
+    alert('Seu navegador bloqueou a nova janela. Permita pop-ups pra esse site e tente de novo.');
+    return;
+  }
+
+  const ingredientesHtml = recipe.ingredientes
+    .split('\n')
+    .filter(l => l.trim() !== '')
+    .map(l => `<li>${escapeHtml(l)}</li>`)
+    .join('');
+
+  const metaPartes = [recipe.categoria, recipe.tempo, recipe.porcoes ? recipe.porcoes + ' porções' : null]
+    .filter(Boolean)
+    .map(escapeHtml)
+    .join(' • ');
+
+  janela.document.write(`
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8">
+      <title>${escapeHtml(recipe.nome)}</title>
+      <style>
+        body { font-family: Georgia, 'Times New Roman', serif; max-width: 700px; margin: 40px auto; padding: 0 20px; color: #333; }
+        h1 { color: #e8748f; margin-bottom: 4px; }
+        .meta { color: #777; font-size: 0.95rem; margin-bottom: 24px; }
+        h2 { color: #6fa98a; font-size: 1.1rem; margin-top: 24px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 6px; }
+        p { line-height: 1.6; white-space: pre-wrap; }
+      </style>
+    </head>
+    <body>
+      <h1>${escapeHtml(recipe.nome)}</h1>
+      <p class="meta">${metaPartes}</p>
+      <h2>Ingredientes</h2>
+      <ul>${ingredientesHtml}</ul>
+      <h2>Modo de preparo</h2>
+      <p>${escapeHtml(recipe.modo)}</p>
+    </body>
+    </html>
+  `);
+  janela.document.close();
+  janela.focus();
+  setTimeout(() => janela.print(), 300);
+}
 
 // ---------- Favoritar e compartilhar ----------
 list.addEventListener('click', function (event) {
