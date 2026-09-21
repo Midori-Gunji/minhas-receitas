@@ -525,9 +525,16 @@ button:hover {
   border-radius: 22px;
   padding: 32px;
   width: 90%;
-  max-width: 340px;
+  max-width: 400px;
+  max-height: 85vh;
+  overflow-y: auto;
   position: relative;
   box-shadow: 0 8px 0 var(--pink);
+}
+
+.profile-box h2 {
+  text-align: center;
+  margin-top: 0;
 }
 
 .profile-close-btn {
@@ -799,16 +806,18 @@ button:hover {
 }
 
 .friends-section {
-  margin-top: 24px;
-  border-top: 1.5px dashed var(--line);
-  padding-top: 16px;
+  margin-top: 26px;
+  border-top: 3px dashed var(--line);
+  padding-top: 20px;
   text-align: left;
 }
 
 .friends-section h3 {
   font-family: 'Baloo 2', sans-serif;
+  font-size: 1.4rem;
   color: var(--pink-dark);
-  margin: 0 0 10px;
+  margin: 0 0 14px;
+  text-align: center;
 }
 
 .add-friend-row {
@@ -820,31 +829,71 @@ button:hover {
   flex: 1;
   margin-top: 0;
   font-size: 0.9rem;
-  padding: 8px 12px;
+  padding: 10px 14px;
+  border-radius: 999px;
 }
 
 .add-friend-row button {
   margin-top: 0;
-  padding: 8px 14px;
+  padding: 10px 18px;
   font-size: 0.85rem;
+  border-radius: 999px;
+  box-shadow: 0 3px 0 #c85b76;
 }
 
 .friends-subtitle {
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--mint-dark);
-  margin: 14px 0 6px;
+  margin: 18px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .friend-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fdf3ee;
-  border-radius: 10px;
-  padding: 8px 12px;
-  margin-bottom: 6px;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
   font-size: 0.9rem;
+  box-shadow: 0 4px 0 var(--pink);
+}
+
+.friend-request-item {
+  box-shadow: 0 4px 0 var(--mint);
+}
+
+.friend-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.friend-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--pink-dark);
+  color: #fff;
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.friend-request-item .friend-avatar {
+  background: var(--mint-dark);
+}
+
+.friend-name {
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .friend-request-actions {
@@ -854,12 +903,12 @@ button:hover {
 
 .accept-friend-btn, .decline-friend-btn, .unfriend-btn {
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   font-family: 'Nunito', sans-serif;
   font-weight: 700;
   font-size: 0.78rem;
   cursor: pointer;
-  padding: 4px 10px;
+  padding: 6px 12px;
   margin-top: 0;
   box-shadow: none;
 }
@@ -869,9 +918,36 @@ button:hover {
   color: #2a5a3a;
 }
 
-.decline-friend-btn, .unfriend-btn {
+.decline-friend-btn {
+  background: #f7dede;
+  color: #a84a4a;
+  padding: 6px 10px;
+}
+
+.unfriend-btn {
   background: var(--yellow);
   color: #7a5a1a;
+}
+
+.accept-friend-btn:hover, .decline-friend-btn:hover, .unfriend-btn:hover {
+  filter: brightness(0.95);
+  transform: none;
+}
+
+.profile-avatar-big {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--pink-dark);
+  color: #fff;
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 700;
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  box-shadow: 0 4px 0 var(--pink);
 }
 
 .profile-btn {

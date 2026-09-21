@@ -127,13 +127,20 @@ logoutBtn.addEventListener('click', function () {
 });
 
 // ---------- Amizades ----------
+function iniciais(nome) {
+  return (nome || '?').trim().charAt(0).toUpperCase();
+}
+
 function renderFriendsList() {
   friendsList.innerHTML = amigosDocs.map((a) => {
     return `<div class="friend-item">
-      <span>${escapeHtml(a.nome)}</span>
+      <div class="friend-info">
+        <span class="friend-avatar">${iniciais(a.nome)}</span>
+        <span class="friend-name">${escapeHtml(a.nome)}</span>
+      </div>
       <button type="button" class="unfriend-btn" data-friend-id="${a.id}">Remover</button>
     </div>`;
-  }).join('') || '<p class="comment-empty">Você ainda não tem amigos adicionados.</p>';
+  }).join('') || '<p class="comment-empty">🐾 Você ainda não tem amigos adicionados.</p>';
 }
 
 function renderFriendRequests(snapshot) {
@@ -144,11 +151,14 @@ function renderFriendRequests(snapshot) {
   friendRequestsBox.style.display = 'block';
   friendRequestsList.innerHTML = snapshot.docs.map((doc) => {
     const r = doc.data();
-    return `<div class="friend-item">
-      <span>${escapeHtml(r.deNome)}</span>
+    return `<div class="friend-item friend-request-item">
+      <div class="friend-info">
+        <span class="friend-avatar">${iniciais(r.deNome)}</span>
+        <span class="friend-name">${escapeHtml(r.deNome)}</span>
+      </div>
       <span class="friend-request-actions">
-        <button type="button" class="accept-friend-btn" data-request-id="${doc.id}">Aceitar</button>
-        <button type="button" class="decline-friend-btn" data-request-id="${doc.id}">Recusar</button>
+        <button type="button" class="accept-friend-btn" data-request-id="${doc.id}">✓ Aceitar</button>
+        <button type="button" class="decline-friend-btn" data-request-id="${doc.id}">✕</button>
       </span>
     </div>`;
   }).join('');
@@ -235,6 +245,7 @@ friendsList.addEventListener('click', function (event) {
 profileBtn.addEventListener('click', function () {
   profileNomeInput.value = usuarioAtual.displayName || '';
   profileEmail.textContent = usuarioAtual.email;
+  document.getElementById('profile-avatar-big').textContent = iniciais(usuarioAtual.displayName || usuarioAtual.email);
   profileCountReceitas.textContent = minhasReceitasDocs.length;
   profileCountFavoritas.textContent = meusFavoritos.size;
   profileStatus.textContent = '';
