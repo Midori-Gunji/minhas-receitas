@@ -150,6 +150,7 @@
         <label>Visibilidade</label>
         <div class="visibility-picker">
           <label class="radio-label"><input type="radio" name="visibilidade" value="privada" checked> Privada (só eu vejo)</label>
+          <label class="radio-label"><input type="radio" name="visibilidade" value="amigos"> Amigos (só quem eu adicionar)</label>
           <label class="radio-label"><input type="radio" name="visibilidade" value="publica"> Pública (todos veem)</label>
         </div>
 
@@ -218,6 +219,23 @@
       </div>
       <button id="profile-save-btn">Salvar nome</button>
       <p id="profile-status" class="profile-status"></p>
+
+      <div class="friends-section">
+        <h3>Amigos</h3>
+        <div class="add-friend-row">
+          <input type="email" id="friend-email-input" placeholder="E-mail do amigo(a)">
+          <button type="button" id="send-friend-request-btn">Adicionar</button>
+        </div>
+        <p id="friend-status" class="profile-status"></p>
+
+        <div id="friend-requests-box" style="display:none;">
+          <p class="friends-subtitle">Pedidos recebidos</p>
+          <div id="friend-requests-list"></div>
+        </div>
+
+        <p class="friends-subtitle">Seus amigos</p>
+        <div id="friends-list" class="friends-list"></div>
+      </div>
     </div>
   </div>
 

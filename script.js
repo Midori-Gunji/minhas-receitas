@@ -13,6 +13,9 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 const receitasRef = db.collection('receitas');
 const comentariosRef = db.collection('comentarios');
+const usuariosRef = db.collection('usuarios');
+const solicitacoesRef = db.collection('solicitacoes');
+const amizadesRef = db.collection('amizades');
 
 // ---------- Elementos da tela de login/cadastro ----------
 const loginScreen = document.getElementById('login-screen');
@@ -36,6 +39,12 @@ const profileCountReceitas = document.getElementById('profile-count-receitas');
 const profileCountFavoritas = document.getElementById('profile-count-favoritas');
 const profileSaveBtn = document.getElementById('profile-save-btn');
 const profileStatus = document.getElementById('profile-status');
+const friendEmailInput = document.getElementById('friend-email-input');
+const sendFriendRequestBtn = document.getElementById('send-friend-request-btn');
+const friendStatus = document.getElementById('friend-status');
+const friendRequestsBox = document.getElementById('friend-requests-box');
+const friendRequestsList = document.getElementById('friend-requests-list');
+const friendsList = document.getElementById('friends-list');
 const saudacao = document.getElementById('saudacao');
 
 let modoCadastro = false;
@@ -73,6 +82,10 @@ authBtn.addEventListener('click', function () {
     }
     auth.createUserWithEmailAndPassword(email, senha)
       .then((cred) => cred.user.updateProfile({ displayName: nome }))
+      .then(() => db.collection('usuarios').doc(auth.currentUser.uid).set({
+        nome,
+        email: auth.currentUser.email
+      }))
       .catch((err) => { authErro.textContent = traduzErro(err.code); });
   } else {
     auth.signInWithEmailAndPassword(email, senha)
@@ -111,6 +124,112 @@ forgotPasswordLink.addEventListener('click', function (e) {
 
 logoutBtn.addEventListener('click', function () {
   auth.signOut();
+});
+
+// ---------- Amizades ----------
+function renderFriendsList() {
+  friendsList.innerHTML = amigosDocs.map((a) => {
+    return `<div class="friend-item">
+      <span>${escapeHtml(a.nome)}</span>
+      <button type="button" class="unfriend-btn" data-friend-id="${a.id}">Remover</button>
+    </div>`;
+  }).join('') || '<p class="comment-empty">Você ainda não tem amigos adicionados.</p>';
+}
+
+function renderFriendRequests(snapshot) {
+  if (snapshot.empty) {
+    friendRequestsBox.style.display = 'none';
+    return;
+  }
+  friendRequestsBox.style.display = 'block';
+  friendRequestsList.innerHTML = snapshot.docs.map((doc) => {
+    const r = doc.data();
+    return `<div class="friend-item">
+      <span>${escapeHtml(r.deNome)}</span>
+      <span class="friend-request-actions">
+        <button type="button" class="accept-friend-btn" data-request-id="${doc.id}">Aceitar</button>
+        <button type="button" class="decline-friend-btn" data-request-id="${doc.id}">Recusar</button>
+      </span>
+    </div>`;
+  }).join('');
+}
+
+sendFriendRequestBtn.addEventListener('click', function () {
+  const email = friendEmailInput.value.trim().toLowerCase();
+  friendStatus.textContent = '';
+
+  if (!email) {
+    friendStatus.textContent = 'Digite um e-mail.';
+    return;
+  }
+  if (email === usuarioAtual.email.toLowerCase()) {
+    friendStatus.textContent = 'Esse é o seu próprio e-mail :)';
+    return;
+  }
+
+  sendFriendRequestBtn.disabled = true;
+
+  usuariosRef.where('email', '==', email).get()
+    .then((snapshot) => {
+      if (snapshot.empty) {
+        friendStatus.textContent = 'Não encontramos ninguém com esse e-mail.';
+        return null;
+      }
+      const outroUser = snapshot.docs[0];
+      const outroUid = outroUser.id;
+
+      if (meusAmigos.includes(outroUid)) {
+        friendStatus.textContent = 'Vocês já são amigos!';
+        return null;
+      }
+
+      return solicitacoesRef.add({
+        deId: usuarioAtual.uid,
+        deNome: usuarioAtual.displayName || usuarioAtual.email,
+        paraId: outroUid,
+        paraEmail: email
+      }).then(() => {
+        friendStatus.textContent = 'Pedido enviado! 🎉';
+        friendEmailInput.value = '';
+      });
+    })
+    .catch(() => {
+      friendStatus.textContent = 'Erro ao enviar pedido. Tente de novo.';
+    })
+    .finally(() => {
+      sendFriendRequestBtn.disabled = false;
+    });
+});
+
+friendRequestsList.addEventListener('click', function (event) {
+  const requestId = event.target.dataset.requestId;
+  if (!requestId) return;
+
+  if (event.target.classList.contains('accept-friend-btn')) {
+    solicitacoesRef.doc(requestId).get().then((doc) => {
+      const r = doc.data();
+      return amizadesRef.doc(requestId).set({
+        deId: r.deId,
+        deNome: r.deNome,
+        paraId: usuarioAtual.uid,
+        paraNome: usuarioAtual.displayName || usuarioAtual.email
+      }).then(() => solicitacoesRef.doc(requestId).delete());
+    });
+  }
+
+  if (event.target.classList.contains('decline-friend-btn')) {
+    solicitacoesRef.doc(requestId).delete();
+  }
+});
+
+friendsList.addEventListener('click', function (event) {
+  const friendId = event.target.dataset.friendId;
+  if (!friendId) return;
+  if (event.target.classList.contains('unfriend-btn')) {
+    if (confirm('Remover essa amizade?')) {
+      amizadesRef.doc(friendId).delete();
+    }
+  }
 });
 
 profileBtn.addEventListener('click', function () {
@@ -159,6 +278,10 @@ auth.onAuthStateChanged(function (user) {
     loginScreen.style.display = 'none';
     appContent.style.display = 'block';
     saudacao.textContent = 'Bem-vinda(o), ' + (user.displayName || user.email) + '!';
+    db.collection('usuarios').doc(user.uid).set({
+      nome: user.displayName || user.email,
+      email: user.email
+    }, { merge: true });
     carregarReceitas();
   } else {
     loginScreen.style.display = 'flex';
@@ -188,6 +311,7 @@ const loadingMsg = document.getElementById('loading-msg');
 let todasReceitas = [];
 let minhasReceitasDocs = [];
 let publicasDocs = [];
+let amigosReceitasDocs = [];
 let filtroAtual = 'Todas';
 let termoBusca = '';
 let ordenacaoAtual = 'recente';
@@ -196,6 +320,8 @@ let dificuldadeSelecionada = 0;
 const comentariosAbertos = new Set();
 let meusFavoritos = new Set();
 const porcoesAtuais = new Map();
+let meusAmigos = [];
+let amigosDocs = [];
 
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -247,12 +373,72 @@ function carregarReceitas() {
     meusFavoritos = new Set(snapshot.docs.map(d => d.data().receitaId));
     renderRecipes();
   });
+
+  escutarAmizades();
+  solicitacoesRef.where('paraId', '==', usuarioAtual.uid).onSnapshot(renderFriendRequests);
+}
+
+let unsubscribeAmigosReceitas = null;
+
+function escutarAmizades() {
+  const meuUid = usuarioAtual.uid;
+
+  amizadesRef.where('deId', '==', meuUid).onSnapshot(atualizarAmigosParte1);
+  amizadesRef.where('paraId', '==', meuUid).onSnapshot(atualizarAmigosParte2);
+
+  let amizadesDe = [];
+  let amizadesPara = [];
+
+  function atualizarAmigosParte1(snapshot) {
+    amizadesDe = snapshot.docs;
+    processarAmizades();
+  }
+  function atualizarAmigosParte2(snapshot) {
+    amizadesPara = snapshot.docs;
+    processarAmizades();
+  }
+
+  function processarAmizades() {
+    const todas = [...amizadesDe, ...amizadesPara];
+    amigosDocs = todas.map((doc) => {
+      const d = doc.data();
+      const souDe = d.deId === meuUid;
+      return {
+        id: doc.id,
+        uid: souDe ? d.paraId : d.deId,
+        nome: souDe ? d.paraNome : d.deNome
+      };
+    });
+    meusAmigos = amigosDocs.map(a => a.uid);
+    renderFriendsList();
+    atualizarReceitasDeAmigos();
+  }
+}
+
+function atualizarReceitasDeAmigos() {
+  if (unsubscribeAmigosReceitas) unsubscribeAmigosReceitas();
+
+  if (meusAmigos.length === 0) {
+    amigosReceitasDocs = [];
+    mesclarEExibir();
+    return;
+  }
+
+  const uids = meusAmigos.slice(0, 30);
+  unsubscribeAmigosReceitas = receitasRef
+    .where('visibilidade', '==', 'amigos')
+    .where('autorId', 'in', uids)
+    .onSnapshot((snapshot) => {
+      amigosReceitasDocs = snapshot.docs;
+      mesclarEExibir();
+    });
 }
 
 function mesclarEExibir() {
   const mapa = new Map();
   minhasReceitasDocs.forEach((doc) => mapa.set(doc.id, doc));
   publicasDocs.forEach((doc) => mapa.set(doc.id, doc));
+  amigosReceitasDocs.forEach((doc) => mapa.set(doc.id, doc));
   todasReceitas = Array.from(mapa.values());
   loadingMsg.style.display = 'none';
   renderRecipes();
@@ -340,7 +526,7 @@ function renderRecipes() {
     card.innerHTML = `
       <div class="card-actions">${botoesEdicao}${botaoFavoritar}</div>
       <span class="category-tag">${escapeHtml(recipe.categoria || 'Sem categoria')}</span>
-      <span class="visibility-tag ${recipe.visibilidade}">${recipe.visibilidade === 'publica' ? 'Pública' : 'Privada'}</span>
+      <span class="visibility-tag ${recipe.visibilidade}">${recipe.visibilidade === 'publica' ? 'Pública' : recipe.visibilidade === 'amigos' ? 'Amigos' : 'Privada'}</span>
       <h3>${escapeHtml(recipe.nome)}</h3>
       <p class="author-tag">Por ${escapeHtml(recipe.autorNome || 'Anônimo')}</p>
       ${tempoHtml}
