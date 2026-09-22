@@ -498,11 +498,7 @@ function mesclarEExibir() {
 }
 
 function iconePlaceholder() {
-  return `<svg viewBox="0 0 100 100" class="thumb-placeholder">
-    <circle cx="50" cy="50" r="48" fill="#fdf3ee"/>
-    <path d="M30 46 L70 46 L64 74 Q50 80 36 74 Z" fill="#f2a4b6" stroke="#4a3a2a" stroke-width="2"/>
-    <path d="M32 48 C28 30 42 20 50 25 C58 20 72 30 68 48 C60 42 40 42 32 48 Z" fill="#fff9f5" stroke="#4a3a2a" stroke-width="2"/>
-  </svg>`;
+  return `<img src="icon-512.png" alt="Sem foto" class="thumb-placeholder">`;
 }
 
 function renderRecipes() {

@@ -363,6 +363,15 @@ button:hover {
   height: 100%;
 }
 
+.recipe-thumb .thumb-placeholder {
+  width: 55%;
+  height: 55%;
+  margin: 22.5% auto 0;
+  object-fit: contain;
+  display: block;
+  opacity: 0.85;
+}
+
 .recipe-summary {
   padding: 12px 14px 16px;
 }
