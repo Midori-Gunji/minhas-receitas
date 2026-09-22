@@ -38,6 +38,18 @@ function uploadParaCloudinary(arquivo) {
     });
 }
 
+// Mantém o campo capaUrl da receita em dia com a foto mais antiga
+// cadastrada, pra lista de receitas conseguir mostrar a miniatura
+// sem precisar abrir o detalhe da receita primeiro.
+function sincronizarCapaReceita(receitaId) {
+  fotosRef.where('receitaId', '==', receitaId).orderBy('criadoEm', 'asc').limit(1).get()
+    .then((snapshot) => {
+      const novaCapa = snapshot.empty ? null : snapshot.docs[0].data().url;
+      return receitasRef.doc(receitaId).update({ capaUrl: novaCapa });
+    })
+    .catch((err) => console.error('Erro ao sincronizar capa da receita:', err));
+}
+
 // ---------- Elementos da tela de login/cadastro ----------
 const loginScreen = document.getElementById('login-screen');
 const appContent = document.getElementById('app-content');
@@ -529,9 +541,8 @@ function renderRecipes() {
     card.className = 'recipe-card-compact';
     card.dataset.id = doc.id;
 
-    const fotos = fotosCache.get(doc.id) || [];
-    const thumbHtml = fotos.length > 0
-      ? `<img src="${fotos[0].url}" alt="${escapeHtml(recipe.nome)}">`
+    const thumbHtml = recipe.capaUrl
+      ? `<img src="${recipe.capaUrl}" alt="${escapeHtml(recipe.nome)}">`
       : iconePlaceholder();
 
     const tempoHtml = recipe.tempo ? `<span>⏱ ${escapeHtml(recipe.tempo)}</span>` : '';
@@ -895,7 +906,7 @@ function renderFotosNaTela(id) {
   gridEl.innerHTML = fotos.map((f) => {
     const souAutorFoto = usuarioAtual && f.autorId === usuarioAtual.uid;
     const botaoApagar = souAutorFoto
-      ? `<button class="delete-photo-btn" data-photo-id="${f.id}">✕</button>`
+      ? `<button class="delete-photo-btn" data-photo-id="${f.id}" data-receita-id="${id}">✕</button>`
       : '';
     return `<div class="photo-item">
       <img src="${f.url}" alt="Foto da receita">
@@ -932,6 +943,7 @@ document.addEventListener('click', function (event) {
         criadoEm: firebase.firestore.FieldValue.serverTimestamp()
       }))
       .then(() => {
+        sincronizarCapaReceita(id);
         statusEl.textContent = 'Foto enviada! 🎉';
         input.value = '';
         setTimeout(() => { statusEl.textContent = ''; }, 3000);
@@ -946,8 +958,9 @@ document.addEventListener('click', function (event) {
 
   if (event.target.classList.contains('delete-photo-btn')) {
     const photoId = event.target.dataset.photoId;
+    const receitaId = event.target.dataset.receitaId;
     if (confirm('Apagar essa foto?')) {
-      fotosRef.doc(photoId).delete();
+      fotosRef.doc(photoId).delete().then(() => sincronizarCapaReceita(receitaId));
     }
   }
 });
