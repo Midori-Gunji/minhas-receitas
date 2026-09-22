@@ -20,7 +20,7 @@ const fotosRef = db.collection('fotos');
 
 // ---------- Cloudinary (upload de fotos) ----------
 const CLOUDINARY_CLOUD_NAME = 'n2dy9jfd';
-const CLOUDINARY_UPLOAD_PRESET = 'receitas - fotos';
+const CLOUDINARY_UPLOAD_PRESET = 'receitas';
 
 function uploadParaCloudinary(arquivo) {
   const formData = new FormData();
@@ -855,7 +855,7 @@ document.addEventListener('click', function (event) {
           dadosComentario.fotoUrl = url;
           salvarComentario();
         })
-        .catch(() => alert('Erro ao enviar a foto do comentário. Tente de novo.'))
+        .catch((erro) => alert('Erro ao enviar a foto do comentário: ' + erro.message))
         .finally(() => {
           event.target.disabled = false;
           event.target.textContent = 'Enviar';
@@ -948,8 +948,8 @@ document.addEventListener('click', function (event) {
         input.value = '';
         setTimeout(() => { statusEl.textContent = ''; }, 3000);
       })
-      .catch(() => {
-        statusEl.textContent = 'Erro ao enviar. Tente de novo.';
+      .catch((erro) => {
+        statusEl.textContent = 'Erro ao enviar: ' + erro.message;
       })
       .finally(() => {
         event.target.disabled = false;
