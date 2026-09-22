@@ -676,6 +676,7 @@ function abrirDetalheReceita(id) {
       fotosCache.set(id, snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
       if (detalheAbertoId === id) renderFotosNaTela(id);
       renderRecipes();
+      sincronizarCapaReceita(id);
     });
   }
 }
