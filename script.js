@@ -16,6 +16,27 @@ const comentariosRef = db.collection('comentarios');
 const usuariosRef = db.collection('usuarios');
 const solicitacoesRef = db.collection('solicitacoes');
 const amizadesRef = db.collection('amizades');
+const fotosRef = db.collection('fotos');
+
+// ---------- Cloudinary (upload de fotos) ----------
+const CLOUDINARY_CLOUD_NAME = 'n2dy9jfd';
+const CLOUDINARY_UPLOAD_PRESET = 'receitas - fotos';
+
+function uploadParaCloudinary(arquivo) {
+  const formData = new FormData();
+  formData.append('file', arquivo);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+  return fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+    method: 'POST',
+    body: formData
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.secure_url) return data.secure_url;
+      throw new Error(data.error ? data.error.message : 'Erro no upload');
+    });
+}
 
 // ---------- Elementos da tela de login/cadastro ----------
 const loginScreen = document.getElementById('login-screen');
@@ -333,6 +354,9 @@ let meusFavoritos = new Set();
 const porcoesAtuais = new Map();
 let meusAmigos = [];
 let amigosDocs = [];
+const fotosOuvindo = new Set();
+const fotosCache = new Map();
+let detalheAbertoId = null;
 
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -389,6 +413,7 @@ function carregarReceitas() {
   db.collection('favoritos').where('autorId', '==', usuarioAtual.uid).onSnapshot((snapshot) => {
     meusFavoritos = new Set(snapshot.docs.map(d => d.data().receitaId));
     renderRecipes();
+    renderDetalheConteudo();
   });
 
   escutarAmizades();
@@ -457,6 +482,15 @@ function mesclarEExibir() {
   todasReceitas = Array.from(mapa.values());
   loadingMsg.style.display = 'none';
   renderRecipes();
+  renderDetalheConteudo();
+}
+
+function iconePlaceholder() {
+  return `<svg viewBox="0 0 100 100" class="thumb-placeholder">
+    <circle cx="50" cy="50" r="48" fill="#fdf3ee"/>
+    <path d="M30 46 L70 46 L64 74 Q50 80 36 74 Z" fill="#f2a4b6" stroke="#4a3a2a" stroke-width="2"/>
+    <path d="M32 48 C28 30 42 20 50 25 C58 20 72 30 68 48 C60 42 40 42 32 48 Z" fill="#fff9f5" stroke="#4a3a2a" stroke-width="2"/>
+  </svg>`;
 }
 
 function renderRecipes() {
@@ -492,87 +526,158 @@ function renderRecipes() {
   docsFiltrados.forEach((doc) => {
     const recipe = doc.data();
     const card = document.createElement('div');
-    card.className = 'recipe-card';
+    card.className = 'recipe-card-compact';
+    card.dataset.id = doc.id;
 
-    const porcoesBase = recipe.porcoes || 1;
-    if (!porcoesAtuais.has(doc.id)) porcoesAtuais.set(doc.id, porcoesBase);
-    const porcoesAtual = porcoesAtuais.get(doc.id);
-    const fatorEscala = porcoesAtual / porcoesBase;
+    const fotos = fotosCache.get(doc.id) || [];
+    const thumbHtml = fotos.length > 0
+      ? `<img src="${fotos[0].url}" alt="${escapeHtml(recipe.nome)}">`
+      : iconePlaceholder();
 
-    const ingredientesHtml = recipe.ingredientes
-      .split('\n')
-      .filter(line => line.trim() !== '')
-      .map((line, idx) => {
-        const linhaEscalada = escalarLinhaIngrediente(line, fatorEscala);
-        return `<li class="ingredient-item"><label class="ingredient-check">
-          <input type="checkbox" class="ingredient-checkbox">
-          <span>${escapeHtml(linhaEscalada)}</span>
-        </label></li>`;
-      })
-      .join('');
-
-    const controlePorcoes = recipe.porcoes
-      ? `<div class="portions-control">
-          <span>Porções:</span>
-          <button type="button" class="portion-btn" data-portion-action="menos" data-id="${doc.id}">−</button>
-          <span class="portion-value">${porcoesAtual}</span>
-          <button type="button" class="portion-btn" data-portion-action="mais" data-id="${doc.id}">+</button>
-        </div>`
-      : '';
-
-    const souAutor = usuarioAtual && recipe.autorId === usuarioAtual.uid;
-    const botoesEdicao = souAutor
-      ? `<button class="edit-btn" data-id="${doc.id}">Editar</button>
-         <button class="delete-btn" data-id="${doc.id}">Remover</button>`
-      : '';
-
-    const ehFavorita = meusFavoritos.has(doc.id);
-    const botaoFavoritar = !souAutor
-      ? `<button class="favorite-btn ${ehFavorita ? 'favorited' : ''}" data-id="${doc.id}">${ehFavorita ? '⭐ Favoritada' : '☆ Favoritar'}</button>`
-      : '';
-
-    const qtdComentarios = comentariosCache.has(doc.id) ? comentariosCache.get(doc.id).length : null;
-    const textoComentarios = qtdComentarios !== null ? `💬 Comentários (${qtdComentarios})` : '💬 Comentários';
-
-    const tempoHtml = recipe.tempo
-      ? `<p class="tempo-tag">⏱ ${escapeHtml(recipe.tempo)}</p>`
-      : '';
+    const tempoHtml = recipe.tempo ? `<span>⏱ ${escapeHtml(recipe.tempo)}</span>` : '';
 
     card.innerHTML = `
-      <div class="card-actions">${botoesEdicao}${botaoFavoritar}</div>
-      <span class="category-tag">${escapeHtml(recipe.categoria || 'Sem categoria')}</span>
-      <span class="visibility-tag ${recipe.visibilidade}">${recipe.visibilidade === 'publica' ? 'Pública' : recipe.visibilidade === 'amigos' ? 'Amigos' : 'Privada'}</span>
-      <h3>${escapeHtml(recipe.nome)}</h3>
-      <p class="author-tag">Por ${escapeHtml(recipe.autorNome || 'Anônimo')}</p>
-      ${tempoHtml}
-      <p class="stars-display">Dificuldade: <span class="stars-only">${estrelasParaTexto(recipe.dificuldade || 0)}</span></p>
-      ${controlePorcoes}
-      <p class="field-label">Ingredientes</p>
-      <ul class="ingredient-list">${ingredientesHtml}</ul>
-      <p class="field-label">Modo de preparo</p>
-      <p>${escapeHtml(recipe.modo)}</p>
-      <button type="button" class="export-pdf-btn" data-id="${doc.id}">🖨️ Exportar PDF</button>
-      <div class="comments-section">
-        <button class="toggle-comments-btn" data-id="${doc.id}">${textoComentarios}</button>
-        <button class="share-btn" data-id="${doc.id}">🔗 Compartilhar</button>
-
-        <div class="comments-box" data-comments-for="${doc.id}" style="display:${comentariosAbertos.has(doc.id) ? 'block' : 'none'};">
-          <div class="comments-list" data-list-for="${doc.id}"></div>
-          <div class="comment-input-row">
-            <input type="text" class="comment-input" data-comment-input-for="${doc.id}" placeholder="Deixe um comentário...">
-            <button type="button" class="comment-send-btn" data-comment-send-for="${doc.id}">Enviar</button>
-          </div>
+      <div class="recipe-thumb">${thumbHtml}</div>
+      <div class="recipe-summary">
+        <div class="recipe-summary-tags">
+          <span class="category-tag">${escapeHtml(recipe.categoria || 'Sem categoria')}</span>
+          <span class="visibility-tag ${recipe.visibilidade}">${recipe.visibilidade === 'publica' ? 'Pública' : recipe.visibilidade === 'amigos' ? 'Amigos' : 'Privada'}</span>
+        </div>
+        <h3>${escapeHtml(recipe.nome)}</h3>
+        <div class="recipe-summary-meta">
+          ${tempoHtml}
+          <span class="stars-only">${estrelasParaTexto(recipe.dificuldade || 0)}</span>
         </div>
       </div>
     `;
 
     list.appendChild(card);
   });
-
-  comentariosAbertos.forEach((id) => {
-    if (typeof renderComentariosNaTela === 'function') renderComentariosNaTela(id);
-  });
 }
+
+function construirDetalheHtml(doc) {
+  const recipe = doc.data();
+
+  const porcoesBase = recipe.porcoes || 1;
+  if (!porcoesAtuais.has(doc.id)) porcoesAtuais.set(doc.id, porcoesBase);
+  const porcoesAtual = porcoesAtuais.get(doc.id);
+  const fatorEscala = porcoesAtual / porcoesBase;
+
+  const ingredientesHtml = recipe.ingredientes
+    .split('\n')
+    .filter(line => line.trim() !== '')
+    .map((line) => {
+      const linhaEscalada = escalarLinhaIngrediente(line, fatorEscala);
+      return `<li class="ingredient-item"><label class="ingredient-check">
+        <input type="checkbox" class="ingredient-checkbox">
+        <span>${escapeHtml(linhaEscalada)}</span>
+      </label></li>`;
+    })
+    .join('');
+
+  const controlePorcoes = recipe.porcoes
+    ? `<div class="portions-control">
+        <span>Porções:</span>
+        <button type="button" class="portion-btn" data-portion-action="menos" data-id="${doc.id}">−</button>
+        <span class="portion-value">${porcoesAtual}</span>
+        <button type="button" class="portion-btn" data-portion-action="mais" data-id="${doc.id}">+</button>
+      </div>`
+    : '';
+
+  const souAutor = usuarioAtual && recipe.autorId === usuarioAtual.uid;
+  const botoesEdicao = souAutor
+    ? `<button class="edit-btn" data-id="${doc.id}">Editar</button>
+       <button class="delete-btn" data-id="${doc.id}">Remover</button>`
+    : '';
+
+  const ehFavorita = meusFavoritos.has(doc.id);
+  const botaoFavoritar = !souAutor
+    ? `<button class="favorite-btn ${ehFavorita ? 'favorited' : ''}" data-id="${doc.id}">${ehFavorita ? '⭐ Favoritada' : '☆ Favoritar'}</button>`
+    : '';
+
+  const tempoHtml = recipe.tempo
+    ? `<p class="tempo-tag">⏱ ${escapeHtml(recipe.tempo)}</p>`
+    : '';
+
+  return `
+    <div class="card-actions">${botoesEdicao}${botaoFavoritar}</div>
+    <span class="category-tag">${escapeHtml(recipe.categoria || 'Sem categoria')}</span>
+    <span class="visibility-tag ${recipe.visibilidade}">${recipe.visibilidade === 'publica' ? 'Pública' : recipe.visibilidade === 'amigos' ? 'Amigos' : 'Privada'}</span>
+    <h3>${escapeHtml(recipe.nome)}</h3>
+    <p class="author-tag">Por ${escapeHtml(recipe.autorNome || 'Anônimo')}</p>
+    ${tempoHtml}
+    <p class="stars-display">Dificuldade: <span class="stars-only">${estrelasParaTexto(recipe.dificuldade || 0)}</span></p>
+    ${controlePorcoes}
+    <p class="field-label">Ingredientes</p>
+    <ul class="ingredient-list">${ingredientesHtml}</ul>
+    <p class="field-label">Modo de preparo</p>
+    <p>${escapeHtml(recipe.modo)}</p>
+    <button type="button" class="export-pdf-btn" data-id="${doc.id}">🖨️ Exportar PDF</button>
+    <button class="share-btn" data-id="${doc.id}">🔗 Compartilhar</button>
+
+    <div class="photos-section">
+      <p class="field-label">📷 Fotos</p>
+      <div class="photos-grid" data-photos-list-for="${doc.id}"></div>
+      <div class="photo-upload-row">
+        <input type="file" accept="image/*" class="photo-input" data-photo-input-for="${doc.id}">
+        <button type="button" class="photo-upload-btn" data-photo-upload-for="${doc.id}">Enviar foto</button>
+      </div>
+      <p class="photo-upload-status" data-photo-status-for="${doc.id}"></p>
+    </div>
+
+    <div class="comments-section">
+      <p class="field-label">💬 Comentários</p>
+      <div class="comments-list" data-list-for="${doc.id}"></div>
+      <div class="comment-input-row">
+        <input type="text" class="comment-input" data-comment-input-for="${doc.id}" placeholder="Deixe um comentário...">
+        <input type="file" accept="image/*" class="comment-photo-input" data-comment-photo-for="${doc.id}">
+        <button type="button" class="comment-send-btn" data-comment-send-for="${doc.id}">Enviar</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderDetalheConteudo() {
+  if (!detalheAbertoId) return;
+  const doc = todasReceitas.find(d => d.id === detalheAbertoId);
+  if (!doc) return;
+  document.getElementById('recipe-detail-content').innerHTML = construirDetalheHtml(doc);
+  renderComentariosNaTela(detalheAbertoId);
+  renderFotosNaTela(detalheAbertoId);
+}
+
+function abrirDetalheReceita(id) {
+  detalheAbertoId = id;
+  renderDetalheConteudo();
+  document.getElementById('recipe-detail-modal').style.display = 'flex';
+
+  if (!comentariosOuvindo.has(id)) {
+    comentariosOuvindo.add(id);
+    comentariosRef.where('receitaId', '==', id).orderBy('criadoEm', 'asc').onSnapshot((snapshot) => {
+      comentariosCache.set(id, snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+      if (detalheAbertoId === id) renderComentariosNaTela(id);
+    });
+  }
+
+  if (!fotosOuvindo.has(id)) {
+    fotosOuvindo.add(id);
+    fotosRef.where('receitaId', '==', id).orderBy('criadoEm', 'asc').onSnapshot((snapshot) => {
+      fotosCache.set(id, snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+      if (detalheAbertoId === id) renderFotosNaTela(id);
+      renderRecipes();
+    });
+  }
+}
+
+function fecharDetalheReceita() {
+  detalheAbertoId = null;
+  document.getElementById('recipe-detail-modal').style.display = 'none';
+}
+
+document.getElementById('recipe-detail-close-btn').addEventListener('click', fecharDetalheReceita);
+document.getElementById('recipe-detail-modal').addEventListener('click', function (event) {
+  if (event.target.id === 'recipe-detail-modal') fecharDetalheReceita();
+});
 
 function entrarModoEdicao(id, recipe) {
   editandoId = id;
@@ -640,20 +745,29 @@ form.addEventListener('submit', function (event) {
 
 cancelBtn.addEventListener('click', sairModoEdicao);
 
-list.addEventListener('click', function (event) {
+document.addEventListener('click', function (event) {
   const id = event.target.dataset.id;
   if (!id) return;
 
   if (event.target.classList.contains('delete-btn')) {
     if (confirm('Tem certeza que quer apagar essa receita? Essa ação não pode ser desfeita.')) {
       receitasRef.doc(id).delete();
+      fecharDetalheReceita();
     }
   }
 
   if (event.target.classList.contains('edit-btn')) {
     const doc = todasReceitas.find(d => d.id === id);
-    if (doc) entrarModoEdicao(id, doc.data());
+    if (doc) {
+      fecharDetalheReceita();
+      entrarModoEdicao(id, doc.data());
+    }
   }
+});
+
+list.addEventListener('click', function (event) {
+  const card = event.target.closest('.recipe-card-compact');
+  if (card) abrirDetalheReceita(card.dataset.id);
 });
 
 searchInput.addEventListener('input', function () {
@@ -690,50 +804,54 @@ function renderComentariosNaTela(id) {
     const botaoApagar = souAutorComentario
       ? `<button class="delete-comment-btn" data-comment-id="${c.id}">Apagar</button>`
       : '';
-    return `<p class="comment-item"><strong>${escapeHtml(c.autorNome)}:</strong> ${escapeHtml(c.texto)} ${botaoApagar}</p>`;
+    const fotoHtml = c.fotoUrl ? `<img src="${c.fotoUrl}" class="comment-photo" alt="">` : '';
+    return `<div class="comment-item">
+      <p><strong>${escapeHtml(c.autorNome)}:</strong> ${escapeHtml(c.texto || '')} ${botaoApagar}</p>
+      ${fotoHtml}
+    </div>`;
   }).join('') || '<p class="comment-empty">Nenhum comentário ainda.</p>';
 }
 
-list.addEventListener('click', function (event) {
-  if (event.target.classList.contains('toggle-comments-btn')) {
-    const id = event.target.dataset.id;
-    const box = document.querySelector(`.comments-box[data-comments-for="${id}"]`);
-    const abrindo = box.style.display === 'none';
-    box.style.display = abrindo ? 'block' : 'none';
-
-    if (abrindo) {
-      comentariosAbertos.add(id);
-      renderComentariosNaTela(id);
-    } else {
-      comentariosAbertos.delete(id);
-    }
-
-    if (!comentariosOuvindo.has(id)) {
-      comentariosOuvindo.add(id);
-      comentariosRef.where('receitaId', '==', id).orderBy('criadoEm', 'asc').onSnapshot((snapshot) => {
-        comentariosCache.set(id, snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-        renderComentariosNaTela(id);
-        const btn = document.querySelector(`.toggle-comments-btn[data-id="${id}"]`);
-        if (btn) btn.textContent = `💬 Comentários (${snapshot.docs.length})`;
-      });
-    }
-  }
-
+document.addEventListener('click', function (event) {
   if (event.target.classList.contains('comment-send-btn')) {
     const id = event.target.dataset.commentSendFor;
     const input = document.querySelector(`.comment-input[data-comment-input-for="${id}"]`);
+    const fileInput = document.querySelector(`.comment-photo-input[data-comment-photo-for="${id}"]`);
     const texto = input.value.trim();
-    if (!texto) return;
+    const arquivo = fileInput.files[0];
 
-    comentariosRef.add({
+    if (!texto && !arquivo) return;
+
+    const dadosComentario = {
       receitaId: id,
       texto,
       autorId: usuarioAtual.uid,
       autorNome: usuarioAtual.displayName || usuarioAtual.email,
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
 
-    input.value = '';
+    const salvarComentario = () => {
+      comentariosRef.add(dadosComentario);
+      input.value = '';
+      fileInput.value = '';
+    };
+
+    if (arquivo) {
+      event.target.disabled = true;
+      event.target.textContent = 'Enviando...';
+      uploadParaCloudinary(arquivo)
+        .then((url) => {
+          dadosComentario.fotoUrl = url;
+          salvarComentario();
+        })
+        .catch(() => alert('Erro ao enviar a foto do comentário. Tente de novo.'))
+        .finally(() => {
+          event.target.disabled = false;
+          event.target.textContent = 'Enviar';
+        });
+    } else {
+      salvarComentario();
+    }
   }
 
   if (event.target.classList.contains('delete-comment-btn')) {
@@ -745,14 +863,14 @@ list.addEventListener('click', function (event) {
 });
 
 // ---------- Porções, checkboxes de ingrediente e exportar PDF ----------
-list.addEventListener('click', function (event) {
+document.addEventListener('click', function (event) {
   if (event.target.classList.contains('portion-btn')) {
     const id = event.target.dataset.id;
     const acao = event.target.dataset.portionAction;
     const atual = porcoesAtuais.get(id) || 1;
     const novo = acao === 'mais' ? atual + 1 : Math.max(1, atual - 1);
     porcoesAtuais.set(id, novo);
-    renderRecipes();
+    renderDetalheConteudo();
   }
 
   if (event.target.classList.contains('export-pdf-btn')) {
@@ -762,10 +880,75 @@ list.addEventListener('click', function (event) {
   }
 });
 
-list.addEventListener('change', function (event) {
+document.addEventListener('change', function (event) {
   if (event.target.classList.contains('ingredient-checkbox')) {
     const li = event.target.closest('.ingredient-item');
     li.classList.toggle('checked', event.target.checked);
+  }
+});
+
+// ---------- Fotos da receita (Cloudinary) ----------
+function renderFotosNaTela(id) {
+  const gridEl = document.querySelector(`.photos-grid[data-photos-list-for="${id}"]`);
+  if (!gridEl) return;
+  const fotos = fotosCache.get(id) || [];
+  gridEl.innerHTML = fotos.map((f) => {
+    const souAutorFoto = usuarioAtual && f.autorId === usuarioAtual.uid;
+    const botaoApagar = souAutorFoto
+      ? `<button class="delete-photo-btn" data-photo-id="${f.id}">✕</button>`
+      : '';
+    return `<div class="photo-item">
+      <img src="${f.url}" alt="Foto da receita">
+      <p class="photo-author">${escapeHtml(f.autorNome)} ${botaoApagar}</p>
+    </div>`;
+  }).join('') || '<p class="comment-empty">Nenhuma foto ainda. Seja a primeira a enviar!</p>';
+}
+
+document.addEventListener('click', function (event) {
+  if (event.target.classList.contains('photo-upload-btn')) {
+    const id = event.target.dataset.photoUploadFor;
+    const input = document.querySelector(`.photo-input[data-photo-input-for="${id}"]`);
+    const statusEl = document.querySelector(`.photo-upload-status[data-photo-status-for="${id}"]`);
+    const arquivo = input.files[0];
+
+    if (!arquivo) {
+      statusEl.textContent = 'Escolha uma imagem primeiro.';
+      return;
+    }
+    if (arquivo.size > 8 * 1024 * 1024) {
+      statusEl.textContent = 'Imagem muito grande (máx. 8MB).';
+      return;
+    }
+
+    statusEl.textContent = 'Enviando...';
+    event.target.disabled = true;
+
+    uploadParaCloudinary(arquivo)
+      .then((url) => fotosRef.add({
+        receitaId: id,
+        url,
+        autorId: usuarioAtual.uid,
+        autorNome: usuarioAtual.displayName || usuarioAtual.email,
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      }))
+      .then(() => {
+        statusEl.textContent = 'Foto enviada! 🎉';
+        input.value = '';
+        setTimeout(() => { statusEl.textContent = ''; }, 3000);
+      })
+      .catch(() => {
+        statusEl.textContent = 'Erro ao enviar. Tente de novo.';
+      })
+      .finally(() => {
+        event.target.disabled = false;
+      });
+  }
+
+  if (event.target.classList.contains('delete-photo-btn')) {
+    const photoId = event.target.dataset.photoId;
+    if (confirm('Apagar essa foto?')) {
+      fotosRef.doc(photoId).delete();
+    }
   }
 });
 
@@ -855,7 +1038,7 @@ function exportarReceitaPDF(recipe) {
 }
 
 // ---------- Favoritar e compartilhar ----------
-list.addEventListener('click', function (event) {
+document.addEventListener('click', function (event) {
   if (event.target.classList.contains('favorite-btn')) {
     const id = event.target.dataset.id;
     const favId = usuarioAtual.uid + '_' + id;
