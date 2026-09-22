@@ -672,7 +672,13 @@ function abrirDetalheReceita(id) {
       fotosCache.set(id, snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
       if (detalheAbertoId === id) renderFotosNaTela(id);
       renderRecipes();
-      sincronizarCapaReceita(id);
+
+      // Só a dona da receita tem permissão de atualizar o documento dela,
+      // então só tentamos sincronizar a capa quando é ela quem está vendo.
+      const docReceita = todasReceitas.find((d) => d.id === id);
+      if (docReceita && docReceita.data().autorId === usuarioAtual.uid) {
+        sincronizarCapaReceita(id);
+      }
     });
   }
 }
@@ -940,7 +946,10 @@ document.addEventListener('click', function (event) {
         criadoEm: firebase.firestore.FieldValue.serverTimestamp()
       }))
       .then(() => {
-        sincronizarCapaReceita(id);
+        const docReceita = todasReceitas.find((d) => d.id === id);
+        if (docReceita && docReceita.data().autorId === usuarioAtual.uid) {
+          sincronizarCapaReceita(id);
+        }
         statusEl.textContent = 'Foto enviada! 🎉';
         input.value = '';
         setTimeout(() => { statusEl.textContent = ''; }, 3000);
@@ -957,7 +966,12 @@ document.addEventListener('click', function (event) {
     const photoId = event.target.dataset.photoId;
     const receitaId = event.target.dataset.receitaId;
     if (confirm('Apagar essa foto?')) {
-      fotosRef.doc(photoId).delete().then(() => sincronizarCapaReceita(receitaId));
+      fotosRef.doc(photoId).delete().then(() => {
+        const docReceita = todasReceitas.find((d) => d.id === receitaId);
+        if (docReceita && docReceita.data().autorId === usuarioAtual.uid) {
+          sincronizarCapaReceita(receitaId);
+        }
+      });
     }
   }
 });
